@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shader playground · ACM Workshops</title>
+  <meta name="description" content="Write and run Shadertoy-style GLSL shaders in your browser. No account needed.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
+  <link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body class="playground-page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span>ACM Workshops</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../">Workshops</a>
+        <a href="./" aria-current="page">Playground</a>
+        <a class="nav-gh" href="[GitHub repo URL]">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <div class="playground-bar">
+      <h1>Shader playground</h1>
+      <label for="examples">Start from</label>
+      <select id="examples">
+        <option value="">Choose an example…</option>
+        <option value="hello">Hello, pixel</option>
+        <option value="circle">A circle</option>
+        <option value="face">Smiley face</option>
+        <option value="face-full">Face with every stretch goal</option>
+        <option value="saber-start">Lightsaber starter</option>
+        <option value="lightsaber">Lightsaber demo</option>
+        <option value="planet">Planet demo</option>
+        <option value="synthwave">Synthwave demo</option>
+        <option value="hero">Home page background</option>
+      </select>
+    </div>
+
+    <div class="lab is-tall" id="playground" data-playground data-title="playground.glsl"></div>
+
+    <p class="playground-help">
+      Code here runs exactly like it does on <a href="https://www.shadertoy.com">Shadertoy</a>:
+      write <code>mainImage(out vec4 fragColor, in vec2 fragCoord)</code> and use
+      <code>iResolution</code>, <code>iTime</code> and <code>iMouse</code>. Your code is saved in this browser as you type.
+      To share it, press <b>Copy share link</b>; the code travels inside the link, so no account is needed.
+    </p>
+  </main>
+
+  <script src="../assets/js/shader.js"></script>
+  <script src="../workshops/sp-3-shaders/shaders.js"></script>
+  <script>
+    (function () {
+      var DRAFT = 'acm-playground-draft';
+      var lab = document.getElementById('playground');
+      var start = null;
+      var m = location.hash.match(/code=([^&]+)/);
+      if (m) {
+        try {
+          var b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+          var bin = atob(b64), bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          start = new TextDecoder().decode(bytes);
+        } catch (e) { start = null; }
+      }
+      if (start === null) {
+        try { start = localStorage.getItem(DRAFT); } catch (e) { start = null; }
+      }
+      lab.dataset.initial = start || window.SHADERS.hello;
+      lab.onCodeChange = function (code) {
+        try { localStorage.setItem(DRAFT, code); } catch (e) { /* storage blocked: nothing to save */ }
+      };
+    })();
+  </script>
+  <script src="../assets/js/components.js"></script>
+  <script>
+    document.getElementById('examples').addEventListener('change', function (e) {
+      var id = e.target.value;
+      if (!id) return;
+      var lab = Components.labs.playground;
+      if (lab.textarea.value.trim() && !confirm('Replace your current code with this example? Copy it first if you want to keep it.')) {
+        e.target.value = '';
+        return;
+      }
+      lab.setCode(window.SHADERS[id]);
+      lab.original = window.SHADERS[id];
+      history.replaceState(null, '', location.pathname);
+      e.target.value = '';
+    });
+  </script>
+</body>
+</html>

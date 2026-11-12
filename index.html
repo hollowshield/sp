@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACM Workshops</title>
+  <meta name="description" content="Every ACM workshop as a lesson you can do on your own time: notes, live code and every activity, right in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
+  <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>ACM Workshops</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./" aria-current="page">Workshops</a>
+        <a href="playground/">Playground</a>
+        <a class="nav-gh" href="[GitHub repo URL]">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Workshops you can do on your own time</h1>
+        <p>Missed a meeting, or want another go? Every ACM workshop lives here with its notes, live code and activities. Most run right in your browser.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#catalog">Browse workshops</a>
+          <a class="btn btn-big" href="playground/">Open the shader playground</a>
+        </div>
+      </div>
+      <figure class="hero-art">
+        <div class="demo" data-src="hero" data-alt="A flowing blue pattern drawn by a shader. Drag on it to add a glow."></div>
+        <figcaption>This is a shader running on your GPU right now. Drag on it, then <a id="hero-edit" href="playground/">change its code</a>.</figcaption>
+      </figure>
+    </section>
+
+    <div id="catalog" class="catalog" aria-label="Workshops"></div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>Made for the ACM club at ASU by Pablo Pelaez Fundora.</p>
+      <p>Found a mistake? <a href="[GitHub repo URL]/issues">Open an issue</a>.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/shader.js"></script>
+  <script src="workshops/sp-3-shaders/shaders.js"></script>
+  <script src="assets/js/components.js"></script>
+  <script src="assets/js/workshops.js"></script>
+  <script>
+    document.getElementById('hero-edit').href = 'playground/#code=' + Components.encode(window.SHADERS.hero);
+  </script>
+</body>
+</html>

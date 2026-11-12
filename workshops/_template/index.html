@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[Workshop title] · ACM Workshops</title>
+  <meta name="description" content="[One-sentence description for search engines]">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"></span>ACM Workshops</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../../">Workshops</a>
+        <a href="../../playground/">Playground</a>
+        <a class="nav-gh" href="[GitHub repo URL]">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <header class="lesson-head">
+      <p class="crumbs"><a href="../../">Workshops</a> / [Series name]</p>
+      <h1>[Workshop title]</h1>
+      <p class="lede">[What students learn and make, in one or two sentences.]</p>
+      <dl class="facts">
+        <div><dt>Time</dt><dd>[About N minutes]</dd></div>
+        <div><dt>You need</dt><dd>[Tools]</dd></div>
+        <div><dt>Slides</dt><dd><a href="[link to slides]">Open the deck</a></dd></div>
+      </dl>
+    </header>
+
+    <div class="lesson">
+      <nav class="toc" data-for="#main" aria-label="On this page"><p>On this page</p></nav>
+
+      <main id="main" class="prose">
+        <!--
+          Copy this folder to workshops/<your-workshop>/ and replace everything in [brackets].
+          Then add the workshop to assets/js/workshops.js so it shows on the home page.
+
+          Building blocks you can use (see the SP-3 page for real examples):
+            <div class="activity"> ... </div>                       an orange "your turn" block
+            <ul class="challenges"><li><b>Title</b>Text</li></ul>   challenge cards
+            <details class="answer"><summary>Show answers</summary><div class="answer-body">...</div></details>
+            <pre class="code"><code>...</code></pre>               read-only code
+            <div class="note">...</div>                             a side note
+          For shader workshops, also:
+            <div class="lab" id="lab-x" data-src="name"></div>     editor + live preview
+            <div class="compare" data-src="name"></div>            BLAND 1 vs 0 side by side
+          and put the shader sources in a shaders.js next to this file (see SP-3).
+          Every h2 with an id appears in the "On this page" list automatically.
+        -->
+
+        <h2 id="intro">[First section]</h2>
+        <p>[What this section teaches, in a couple of sentences.]</p>
+
+        <h2 id="activity">[Activity name]</h2>
+        <div class="activity">
+          <p class="activity-tag">Your turn · [minutes] minutes</p>
+          <h3>[What students make]</h3>
+          <p>[Instructions.]</p>
+          <ul class="challenges">
+            <li><b>[Challenge 1]</b>[Short description]</li>
+            <li><b>[Challenge 2]</b>[Short description]</li>
+          </ul>
+          <details class="answer">
+            <summary>Show answers</summary>
+            <div class="answer-body">
+              <p>[Explanation]</p>
+              <pre class="code"><code>[answer code]</code></pre>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="next">Where to go next</h2>
+        <ul class="resources">
+          <li><a href="[url]">[Resource]</a><span>[Why it's worth reading]</span></li>
+        </ul>
+
+      </main>
+    </div>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>Made for the ACM club at ASU by Pablo Pelaez Fundora.</p>
+      <p>Found a mistake? <a href="[GitHub repo URL]/issues">Open an issue</a>.</p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/shader.js"></script>
+  <script src="../../assets/js/components.js"></script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SP-3: Shaders? Never heard of them · ACM Workshops</title>
+  <meta name="description" content="Learn what shaders are, how the GPU turns triangles into pixels, and draw your own face with equations. Runs in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"></span>ACM Workshops</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../../">Workshops</a>
+        <a href="../../playground/">Playground</a>
+        <a class="nav-gh" href="[GitHub repo URL]">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <header class="lesson-head">
+      <p class="crumbs"><a href="../../">Workshops</a> / Graphics programming / SP-3</p>
+      <h1>Shaders? Never heard of them</h1>
+      <p class="lede">What shaders are, how a GPU turns triangles into pixels, and how a few equations become a picture. By the end you'll have drawn your own face with math.</p>
+      <dl class="facts">
+        <div><dt>Time</dt><dd>About 60 minutes</dd></div>
+        <div><dt>You need</dt><dd>A browser, nothing to install</dd></div>
+        <div><dt>You'll make</dt><dd>Your face, as math</dd></div>
+        <div><dt>Slides</dt><dd><a href="[link to slides]">Open the deck</a></dd></div>
+      </dl>
+    </header>
+
+    <div class="lesson">
+      <nav class="toc" data-for="#main" aria-label="On this page"><p>On this page</p></nav>
+
+      <main id="main" class="prose">
+
+        <h2 id="what">What is a shader?</h2>
+        <p class="lead-in">A shader is a tiny program the GPU runs for every vertex or every pixel. It's written in GLSL, which looks a lot like C, so if you know C++ or C# you can already read it.</p>
+        <p>The key idea: you don't write a loop over the screen. You write what <em>one</em> pixel does, and the GPU runs that code for all of them at the same time. Each copy only answers one question: <em>where does this point go?</em> or <em>what color is this pixel?</em></p>
+
+        <h3>Why the GPU?</h3>
+        <div class="big-numbers">
+          <div><b>2.07M</b><span>pixels in one 1920 × 1080 frame</span></div>
+          <div><b>× 60</b><span>frames every second</span></div>
+          <div><b>≈ 124M</b><span>color decisions per second, at minimum</span></div>
+        </div>
+        <p>A CPU has a few fast cores that work through tasks in order. A GPU has thousands of simple cores that all run the same shader on different pixels at once. Think a few expert chefs versus a stadium of line cooks following one recipe card.</p>
+
+        <h3>Same shape, different shader</h3>
+        <p>Both pictures below use the exact same math for the shape: the distance from each pixel to a line. The only difference is what the shader does with that distance. By the end of this lesson you'll understand every line of the one on the right.</p>
+        <div class="compare" data-src="lightsaber"></div>
+
+        <h2 id="hello" data-toc="Activity 1: Hello, pixel">Activity 1: Hello, pixel</h2>
+        <div class="activity">
+          <p class="activity-tag">Your turn · 10 minutes</p>
+          <h3>Your first fragment shader</h3>
+          <p>The editor below runs your code as you type. Shadertoy hands every shader three free inputs: <code>fragCoord</code> (this pixel's position), <code>iResolution</code> (the screen size) and <code>iTime</code> (seconds since start).</p>
+          <div class="lab" id="lab-hello" data-src="hello" data-title="hello.glsl" data-height="14rem"></div>
+          <p>Dividing by <code>iResolution</code> turns pixel positions into numbers from 0 to 1. Colors in shaders go from 0.0 to 1.0, not 0 to 255.</p>
+          <ul class="challenges">
+            <li><b>Try 1: Go blue</b>Make the whole screen ACM blue: <code>vec4(0.0, 0.52, 0.79, 1.0)</code></li>
+            <li><b>Try 2: Flip it</b>Make red run from bottom to top instead of left to right.</li>
+            <li><b>Try 3: Pulse it</b>Put <code>0.5 + 0.5 * sin(iTime)</code> in the blue channel.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show answers</summary>
+            <div class="answer-body">
+              <p><b>Try 1.</b> Every pixel returns the same color, so the whole screen turns blue.</p>
+              <pre class="code" data-src="hello-a1"></pre>
+              <button class="btn" data-load="hello-a1" data-into="lab-hello">Load into the editor</button>
+              <p><b>Try 2.</b> Put <code>uv.y</code> in the red slot. Red is 0 at the bottom and 1 at the top.</p>
+              <pre class="code" data-src="hello-a2"></pre>
+              <button class="btn" data-load="hello-a2" data-into="lab-hello">Load into the editor</button>
+              <p><b>Try 3.</b> <code>sin()</code> swings from −1 to 1. Multiplying by 0.5 and adding 0.5 remaps it to 0 to 1, so blue pulses over time.</p>
+              <pre class="code" data-src="hello-a3"></pre>
+              <button class="btn" data-load="hello-a3" data-into="lab-hello">Load into the editor</button>
+            </div>
+          </details>
+          <p class="note">Prefer the real thing? Every activity also works on <a href="https://www.shadertoy.com/new">shadertoy.com/new</a>: delete the starter code, paste yours, press Alt + Enter.</p>
+        </div>
+
+        <h2 id="pipeline">The graphics pipeline</h2>
+        <p>Every frame in a game takes the same path from triangles to pixels. Two stops are yours to program; the GPU handles the rest.</p>
+        <ol class="pipeline">
+          <li><b>Vertices</b><span>Your mesh: a list of corner positions, plus colors or texture coordinates.</span></li>
+          <li class="is-yours"><b>Vertex shader</b><span>Runs once per corner and moves it to where it lands on screen.</span></li>
+          <li><b>Rasterizer</b><span>Joins corners into triangles and finds every pixel each one covers.</span></li>
+          <li class="is-yours"><b>Fragment shader</b><span>Runs once per covered pixel and picks that pixel's color.</span></li>
+          <li><b>Framebuffer</b><span>Colors are depth-tested, blended and shown on screen.</span></li>
+        </ol>
+        <p class="pipeline-key"><i style="background: var(--blue)"></i>You write it &nbsp;&nbsp;<i style="border: 1px solid var(--line); background: var(--surface)"></i>The GPU does it for you</p>
+
+        <h3>Vertex shader: where does this point go?</h3>
+        <div class="two-col">
+<pre class="code"><code>#version 330 core
+layout (location = 0) in vec3 aPos;
+uniform mat4 uMVP;
+
+void main() {
+    gl_Position = uMVP * vec4(aPos, 1.0);
+}</code></pre>
+          <dl class="defs">
+            <dt>in</dt><dd>Data for this one vertex, from your mesh.</dd>
+            <dt>uniform</dt><dd>The same for every vertex: camera, time, transforms. <code>uMVP</code> moves the object into the world, in front of the camera, and flattens 3D onto the screen.</dd>
+            <dt>gl_Position</dt><dd>The answer: where this corner lands.</dd>
+          </dl>
+        </div>
+
+        <h3>Fragment shader: what color is this pixel?</h3>
+        <div class="two-col">
+<pre class="code"><code>#version 330 core
+out vec4 FragColor;
+uniform float uTime;
+
+void main() {
+    float pulse = 0.5 + 0.5 * sin(uTime);
+    FragColor = vec4(0.0, 0.52 * pulse, 0.79, 1.0);
+}</code></pre>
+          <dl class="defs">
+            <dt>Every pixel at once</dt><dd>One run per pixel the triangle covers.</dd>
+            <dt>No peeking</dt><dd>A pixel can't see what its neighbors decided.</dd>
+            <dt>One output</dt><dd>An RGBA color, each channel 0.0 to 1.0.</dd>
+          </dl>
+        </div>
+
+        <h3>So what is Shadertoy doing?</h3>
+        <p>It draws one triangle big enough to cover the whole screen, so every pixel gets a fragment, and then runs your <code>mainImage()</code> as the fragment shader. All the work happens in the fragment stage, which is why Shadertoy art can look 3D with no meshes at all. You can do the same in your own C++ OpenGL window: draw one full-screen triangle and load the same fragment shader.</p>
+
+        <h2 id="shapes" data-toc="Activity 2: Shapes">Activity 2: Shapes from equations</h2>
+        <p>To draw a shape with math, describe it by its <strong>distance</strong>. For a circle with center <code>c</code> and radius <code>r</code>, at pixel <code>p</code>:</p>
+        <pre class="code"><code>float d = length(p - c) - r;   // a signed distance</code></pre>
+        <ul>
+          <li><code>d &lt; 0</code>: the pixel is inside the circle.</li>
+          <li><code>d = 0</code>: it's exactly on the edge.</li>
+          <li><code>d &gt; 0</code>: it's outside, and <code>d</code> says how far.</li>
+        </ul>
+        <p>Every shape in this lesson starts as one of these numbers, then gets colored by its sign.</p>
+
+        <div class="activity">
+          <p class="activity-tag">Your turn · 10 minutes</p>
+          <h3>Draw a circle</h3>
+          <p>The first line centers the coordinates and divides by the height only, so circles stay round on wide screens.</p>
+          <div class="lab" id="lab-circle" data-src="circle" data-title="circle.glsl" data-height="16rem"></div>
+          <ul class="challenges">
+            <li><b>Try 1: Move it</b>Measure from a new center: <code>length(p - vec2(0.3, 0.0)) - 0.5</code></li>
+            <li><b>Try 2: See the field</b>Color by distance: <code>col = vec3(0.5 + 0.5 * cos(40.0 * d));</code></li>
+            <li><b>Try 3: Smooth edge</b>Replace the <code>? :</code> with a <code>mix()</code> that uses <code>smoothstep(0.0, 0.01, d)</code>.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show answers</summary>
+            <div class="answer-body">
+              <p><b>Try 1.</b> The circle is now centered at (0.3, 0), so it shifts right.</p>
+              <pre class="code" data-src="circle-a1"></pre>
+              <button class="btn" data-load="circle-a1" data-into="lab-circle">Load into the editor</button>
+              <p><b>Try 2.</b> Coloring every pixel by its distance shows the whole distance field as rings. They're evenly spaced because <code>d</code> grows evenly as you move away from the edge.</p>
+              <pre class="code" data-src="circle-a2"></pre>
+              <button class="btn" data-load="circle-a2" data-into="lab-circle">Load into the editor</button>
+              <p><b>Try 3.</b> <code>smoothstep</code> fades from 0 to 1 across a thin band at the edge, and <code>mix</code> blends the two colors by that amount. No more jagged edge.</p>
+              <pre class="code" data-src="circle-a3"></pre>
+              <button class="btn" data-load="circle-a3" data-into="lab-circle">Load into the editor</button>
+            </div>
+          </details>
+        </div>
+
+        <h3>Your toolkit</h3>
+        <p>Every face, logo or scene is these lines in different combinations. Paint back to front: background first, then each shape on top.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Want</th><th>GLSL</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Circle</td><td><code>length(p - c) - r</code></td><td>Distance to a round edge</td></tr>
+              <tr><td>Oval</td><td><code>circle(p * vec2(1.0, 1.4), c, r)</code></td><td>Squish space, then measure</td></tr>
+              <tr><td>Box</td><td><code>length(max(abs(p - c) - size, 0.0))</code></td><td><code>size</code> is half the width and height</td></tr>
+              <tr><td>Join</td><td><code>min(a, b)</code></td><td>Either shape</td></tr>
+              <tr><td>Overlap</td><td><code>max(a, b)</code></td><td>Only where both are</td></tr>
+              <tr><td>Cut</td><td><code>max(a, -b)</code></td><td><code>a</code> with <code>b</code> carved out</td></tr>
+              <tr><td>Mask</td><td><code>1.0 - smoothstep(0.0, 0.01, d)</code></td><td>1 inside, 0 outside, soft edge</td></tr>
+              <tr><td>Paint</td><td><code>col = mix(col, color, mask)</code></td><td>Layer a color on top</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="face" data-toc="Main challenge: Your face">Main challenge: your face, as math</h2>
+        <div class="activity">
+          <p class="activity-tag">Your turn · 20 minutes</p>
+          <h3>Start from a smiley, then make it you</h3>
+          <p>Each layer is one distance, one mask and one <code>mix</code>. The mouth is the clever bit: <code>abs()</code> of a circle's distance makes a ring, and <code>max</code> with <code>p.y + 0.1</code> cuts away everything above y = −0.1, leaving a smile.</p>
+          <div class="lab" id="lab-face" data-src="face" data-title="face.glsl" data-height="22rem"></div>
+          <p>Stretch goals, in any order:</p>
+          <ul class="challenges">
+            <li><b>Your hair</b>A bigger circle behind the head, cut with <code>max(d, -p.y)</code> to keep the top. Boxes make bangs.</li>
+            <li><b>Glasses</b>Rings are <code>abs(circle) - thickness</code>. Add a thin box for the bridge.</li>
+            <li><b>Blink</b>Divide the eye's <code>p.y</code> by a number that drops near zero when <code>step(0.95, fract(iTime * 0.3))</code> fires.</li>
+            <li><b>Look around</b>Shift the pupils toward <code>iMouse.xy</code> so the eyes follow your cursor.</li>
+            <li><b>Background</b>A gradient with <code>p.y</code>, or stripes with <code>sin(p.x * 20.0)</code>.</li>
+            <li><b>Extras</b>Hats, earrings, freckles, a beard. It's all more circles and boxes.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show a face with every stretch goal</summary>
+            <div class="answer-body">
+              <p>Each goal has its own switch at the top. Set one to 0 to see the face without it. Drag on the preview to make the eyes follow.</p>
+              <button class="btn" data-load="face-full" data-into="lab-face">Load into the editor</button>
+              <pre class="code" data-src="face-full"></pre>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="level-up">Level up: one trick, big difference</h2>
+        <p>The gap between a bland shader and a memorable one is usually a single idea. Here are two more. Open either in the playground and flip <code>BLAND</code> between 0 and 1.</p>
+
+        <h3>Fake 3D: a circle becomes a planet</h3>
+        <p>No mesh and no 3D engine. For each pixel inside the circle, the Pythagorean theorem gives the height of a sphere at that point, which gives a surface direction (the <em>normal</em>). Compare that direction with a light direction and you get shading.</p>
+        <pre class="code"><code>vec3 n = normalize(vec3(p, sqrt(r*r - dot(p, p))));  // the circle bulged into a sphere
+col = base * max(dot(n, light), 0.0);                // facing the light = bright</code></pre>
+        <div class="compare" data-src="planet"></div>
+
+        <h3>Perspective and repetition: a gradient becomes a synthwave sunset</h3>
+        <p>Dividing by the distance to the horizon is how perspective works: things farther away get squeezed together. <code>fract()</code> makes anything repeat forever, so one line becomes an infinite grid, and adding <code>iTime</code> makes you fly over it.</p>
+        <pre class="code"><code>float z = 1.0 / (horizon - p.y);                                // farther = bigger z
+float grid = smoothstep(0.44, 0.5, abs(fract(p.x * z) - 0.5));  // fract() repeats forever</code></pre>
+        <div class="compare" data-src="synthwave"></div>
+
+        <h2 id="take-home" data-toc="Take-home: Lightsaber">Take-home: forge your own lightsaber</h2>
+        <div class="activity">
+          <p class="activity-tag">On your own time</p>
+          <h3>From stick to saber</h3>
+          <p>The glow line is the star. <code>0.012 / (d + 0.004)</code> is big when a pixel is close to the blade and fades smoothly as it gets farther away, with no hard edge. Raise 0.012 for a brighter glow; raise 0.004 for a softer core.</p>
+          <div class="lab" id="lab-saber" data-src="saber-start" data-title="lightsaber.glsl" data-height="20rem"></div>
+          <ul class="challenges">
+            <li><b>Pick a color</b>Any RGB works. Try green or purple.</li>
+            <li><b>Add a hilt</b>A thicker gray segment where the blade starts.</li>
+            <li><b>Ignite it</b>Grow the blade's tip from the hilt to full length using <code>iTime</code>.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show an answer</summary>
+            <div class="answer-body">
+              <button class="btn" data-load="saber-answer" data-into="lab-saber">Load into the editor</button>
+              <pre class="code" data-src="saber-answer"></pre>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="next">Where to go next</h2>
+        <p>The idea you used today, one small program running everywhere at once, powers lighting, water and glow in games, real-time scientific visualization, and the math behind training AI models.</p>
+        <ul class="resources">
+          <li><a href="https://thebookofshaders.com">The Book of Shaders</a><span>A gentle, interactive introduction to fragment shaders. The best next step.</span></li>
+          <li><a href="https://iquilezles.org/articles/distfunctions2d/">Inigo Quilez: 2D distance functions</a><span>Every 2D shape formula you'll ever need.</span></li>
+          <li><a href="https://learnopengl.com/Getting-started/Shaders">LearnOpenGL: Shaders</a><span>Vertex and fragment shaders inside a real C++ OpenGL program.</span></li>
+          <li><a href="https://www.shadertoy.com">Shadertoy</a><span>Browse thousands of shaders, then fork them and pull them apart.</span></li>
+          <li><a href="../../playground/">The ACM shader playground</a><span>Everything from this lesson, ready to remix and share with a link.</span></li>
+        </ul>
+      </main>
+    </div>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>Made for the ACM club at ASU by Pablo Pelaez Fundora.</p>
+      <p>Found a mistake? <a href="[GitHub repo URL]/issues">Open an issue</a>.</p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/shader.js"></script>
+  <script src="shaders.js"></script>
+  <script src="../../assets/js/components.js"></script>
+</body>
+</html>
