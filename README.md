@@ -33,9 +33,10 @@ assets/css/site.css            All styles (light and dark mode)
 assets/js/shader.js            The renderer: runs Shadertoy-style shaders with one WebGL2 context
 assets/js/components.js        Turns markup into editors, comparisons, answers and the page contents list
 assets/js/workshops.js         The list of workshops shown on the home page
-workshops/sp-3-shaders/        The full SP-3 lesson and its shaders.js
-workshops/graphics-donut-window/   Outline, waiting for the slide content
-workshops/connect-4-ai/        Outline, waiting for the slide content
+assets/img/                    ACM logo (site icon, and the image the donut demo spins)
+workshops/graphics-donut-window/   "How to donut": lesson, donut.js (live demos), sources.js (full C++)
+workshops/sp-3-shaders/        "Shaders? Never heard of them": lesson and shaders.js
+workshops/connect-4-ai/        "Impossible Connect 4": lesson, connect4.js (playable board + AI), sources.js
 workshops/_template/           Copy this to start a new workshop
 ```
 
@@ -80,7 +81,13 @@ Available inputs: `iResolution`, `iTime`, `iTimeDelta`, `iFrame`, `iMouse`, `iDa
 
 Put a workshop's shaders in a `shaders.js` file next to its page, as template-string entries in `window.SHADERS` (see `workshops/sp-3-shaders/shaders.js`). Avoid backticks and `${` inside shader code.
 
+## Updating the C++ shown on a lesson
+
+The donut and Connect 4 pages show the full workshop code in "Show the full…" panels. That code lives in each folder's `sources.js`, copied from the GitHub repos. If you change the C++ in a repo, paste the new version into `sources.js` too (it's a JSON string, so keep the quotes and escapes valid), or regenerate it with a small script.
+
 ## Notes
+
+- The Connect 4 AI that runs on the website is a simplified teaching version (a few moves of look-ahead plus a guess). The real perfect solver is the C++ in the ImpossibleConnect4 repo.
 
 - Shaders need WebGL2, which every current desktop and mobile browser supports. If it's missing, the page explains that instead of showing a broken preview.
 - Previews pause when they scroll off screen, and start paused for anyone who has "reduce motion" turned on.

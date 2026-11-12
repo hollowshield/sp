@@ -12,12 +12,12 @@ window.WORKSHOPS = [
     blurb: 'From math on a terminal to real-time pixels.',
     items: [
       {
-        code: '[code]',
-        title: 'The spinning donut and your first window',
+        code: '',
+        title: 'How to donut',
         href: 'workshops/graphics-donut-window/',
-        summary: 'How donut.c turns a little trigonometry into a spinning 3D torus made of text, then opening a real window with OpenGL.',
-        meta: ['C and C++', 'OpenGL', '30 min'],
-        status: 'outline'
+        summary: 'How donut.c turns a little trigonometry into a spinning 3D donut made of text, then moving the same math into a real window with GLFW and OpenGL.',
+        meta: ['C++', 'GLFW and OpenGL', 'Live demos in your browser', '30 min'],
+        status: 'ready'
       },
       {
         code: 'SP-3',
@@ -34,12 +34,12 @@ window.WORKSHOPS = [
     blurb: 'Programs that play games better than you do.',
     items: [
       {
-        code: '[code]',
-        title: 'Building an unbeatable Connect 4 AI',
+        code: '',
+        title: 'Impossible Connect 4',
         href: 'workshops/connect-4-ai/',
-        summary: 'How a perfect Connect 4 player searches the game tree, walked through with the ImpossibleConnect4 project.',
-        meta: ['C++', 'SDL3', '60 min'],
-        status: 'outline'
+        summary: 'Building a Connect 4 AI that never loses: an SDL3 game loop, then negamax, alpha-beta pruning, bitboards and a transposition table.',
+        meta: ['C++', 'SDL3', 'Play the AI in your browser', '60 min'],
+        status: 'ready'
       }
     ]
   }

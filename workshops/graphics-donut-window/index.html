@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>The spinning donut and your first window · ACM Workshops</title>
-  <meta name="description" content="How donut.c turns math into a spinning 3D donut made of text, then opening a real window with OpenGL.">
+  <title>How to donut · ACM Workshops</title>
+  <meta name="description" content="How donut.c draws a spinning 3D donut with text characters, and how to move the same math into a real window with GLFW and OpenGL.">
+  <link rel="icon" href="../../assets/img/acm-logo-64.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
@@ -14,7 +15,7 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-head">
     <div class="wrap">
-      <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"></span>ACM Workshops</a>
+      <a class="brand" href="../../"><img class="brand-mark" src="../../assets/img/acm-logo-64.png" alt="">ACM Workshops</a>
       <nav class="site-nav" aria-label="Main">
         <a href="../../">Workshops</a>
         <a href="../../playground/">Playground</a>
@@ -25,13 +26,14 @@
 
   <div class="wrap">
     <header class="lesson-head">
-      <p class="crumbs"><a href="../../">Workshops</a> / Graphics programming</p>
-      <h1>The spinning donut and your first window</h1>
-      <p class="lede">How donut.c turns a little trigonometry into a spinning 3D torus made of text, then opening a real window with OpenGL.</p>
+      <p class="crumbs"><a href="../../">Workshops</a> / Graphics programming / Session 1</p>
+      <h1>How to donut</h1>
+      <p class="lede">a1k0n's donut.c is one of the most famous tiny programs on the internet. Here's exactly why it works, and then how to move the same math out of the terminal and into a real window.</p>
       <dl class="facts">
         <div><dt>Time</dt><dd>About 30 minutes</dd></div>
-        <div><dt>You need</dt><dd>A C++ compiler and OpenGL</dd></div>
-        <div><dt>Slides</dt><dd><a href="[link to slides]">Open the deck</a></dd></div>
+        <div><dt>You need</dt><dd>A C++ compiler and GLFW</dd></div>
+        <div><dt>You'll make</dt><dd>A spinning donut, then any image in 3D</dd></div>
+        <div><dt>Code</dt><dd><a href="https://github.com/hollowshield/donutDemo">hollowshield/donutDemo</a></dd></div>
       </dl>
     </header>
 
@@ -39,33 +41,401 @@
       <nav class="toc" data-for="#main" aria-label="On this page"><p>On this page</p></nav>
 
       <main id="main" class="prose">
-        <p class="note"><strong>This lesson is still being moved over from the slides.</strong> The outline is here so you know what's coming.</p>
 
-        <h2 id="donut">The spinning donut</h2>
-        <p>donut.c is a famous little C program that draws a spinning 3D donut using nothing but text characters in a terminal.</p>
-        <div class="placeholder">Add: how donut.c works (points on a torus, rotation, projection onto the screen, picking a character by brightness), plus the code walkthrough from the slides.</div>
+        <h2 id="donut" data-toc="Here, have a donut">Here, have a donut</h2>
+        <p class="lead-in">This is a 3D donut drawn with nothing but text. No graphics library, no triangles, no ray tracing: just a grid of characters, a little trigonometry and a few lines of C++.</p>
+        <div class="ascii-donut" id="knobs-donut"></div>
+        <p>The sliders are the program's constants. You'll learn what each one does below; come back and play with them once you have. Try dragging R<sub>2</sub> down to 0.</p>
+        <p>The plan: five ideas make the math work, then we keep every bit of that math and only change where the pixels go.</p>
 
-        <h2 id="window">Your first window with OpenGL</h2>
-        <div class="placeholder">Add: setting up a window and an OpenGL context in C++, the render loop, and clearing the screen to a color. Include the starter code and build steps students need.</div>
+        <h2 id="projection" data-toc="Projection">1. Projection: similar triangles do the work</h2>
+        <p>Picture yourself looking through a screen at a point in space. The line from your eye to the point crosses the screen somewhere, and that's where you draw it.</p>
+        <figure class="figure">
+          <svg viewBox="0 0 640 260" role="img" aria-labelledby="proj-fig-title">
+            <title id="proj-fig-title">Side view: an eye at the left, a screen at distance K1, and an object point at distance z and height y. The line from the eye to the point crosses the screen at height y prime.</title>
+            <line x1="40" y1="200" x2="610" y2="200" stroke="currentColor" stroke-opacity=".35" stroke-width="2"/>
+            <line x1="230" y1="30" x2="230" y2="225" stroke="#0085CA" stroke-width="4"/>
+            <text x="238" y="45" fill="#0085CA" font-size="15" font-weight="600">screen</text>
+            <line x1="40" y1="200" x2="540" y2="70" stroke="currentColor" stroke-width="2"/>
+            <path d="M28 190 L44 200 L28 210 Z" fill="currentColor"/>
+            <text x="18" y="232" fill="currentColor" font-size="15">eye</text>
+            <circle cx="540" cy="70" r="7" fill="#F59E2B"/>
+            <text x="512" y="55" fill="currentColor" font-size="15" font-weight="600">(x, y, z)</text>
+            <line x1="540" y1="70" x2="540" y2="200" stroke="#F59E2B" stroke-width="2" stroke-dasharray="6 5"/>
+            <text x="550" y="140" fill="#B4610A" font-size="16" font-weight="700">y</text>
+            <circle cx="230" cy="150.6" r="6" fill="#0085CA"/>
+            <line x1="230" y1="150.6" x2="230" y2="200" stroke="#0085CA" stroke-width="2" stroke-dasharray="4 4"/>
+            <text x="200" y="182" fill="#0085CA" font-size="16" font-weight="700">y′</text>
+            <line x1="40" y1="238" x2="230" y2="238" stroke="currentColor" stroke-width="1.5"/>
+            <text x="120" y="256" fill="currentColor" font-size="15">K₁</text>
+            <line x1="40" y1="222" x2="540" y2="222" stroke="currentColor" stroke-opacity=".6" stroke-width="1.5"/>
+            <text x="380" y="216" fill="currentColor" font-size="15">z</text>
+          </svg>
+          <figcaption>The small triangle (eye to screen) and the big one (eye to object) have the same shape.</figcaption>
+        </figure>
+        <p>Because the triangles are similar, their sides keep the same ratio:</p>
+        <pre class="code"><code>y' / K1 = y / z    →    y' = K1 * y / z
+x' / K1 = x / z    →    x' = K1 * x / z</code></pre>
+        <p>K<sub>1</sub> is the distance from your eye to the screen, so it works as the zoom. That one division is the entire camera.</p>
+        <p><b>Try it:</b> with K<sub>1</sub> = 10, a point at y = 2, z = 4 lands at y′ = 10 × 2 / 4 = 5. Push it back to z = 8 and it lands at 2.5. Farther away means closer to the center of the screen, which is exactly what perspective looks like.</p>
 
-        <h2 id="try-it">Try it yourself</h2>
-        <div class="placeholder">Add: the hands-on activity and its answer, using &lt;details class="answer"&gt; blocks like the SP-3 page.</div>
+        <h3>Watch it happen</h3>
+        <p>This is <code>projection.cpp</code> from the workshop, running in your browser. Step through it: it starts with one dot and ends with a spinning triangle that is really just three dots moving left, right, up and down.</p>
+        <div class="projection-demo"></div>
 
-        <h2 id="next">Next workshop</h2>
-        <p>Continue the series with <a href="../sp-3-shaders/">SP-3: Shaders? Never heard of them</a>, which picks up from the OpenGL window and moves the drawing onto the GPU.</p>
+        <h2 id="depth" data-toc="Depth">2. Depth: who's in front?</h2>
+        <p>Many points on the donut land on the same character cell, for example the front and back of the ring. A <strong>z-buffer</strong> remembers how close the last thing drawn in each cell was, and a new point only wins if it's closer.</p>
+        <div class="two-col">
+<pre class="code"><code>// every frame
+std::fill(zBuf, zBuf + W*H, 0.0f);   // 0 = infinitely far
 
+// every point
+float invZ = 1 / z;                  // divide once...
+int xp = W/2 + K1 * x * invZ;        // ...reuse for x'
+int yp = H/2 - K1 * y * invZ;        // ...and y'
+int o  = xp + W * yp;                // which cell
+if (invZ > zBuf[o]) { zBuf[o] = invZ; draw(o); }</code></pre>
+          <dl class="defs">
+            <dt>Store 1/z, not z</dt><dd>A bigger 1/z means closer. Clear the buffer to 0 and empty cells are automatically "infinitely far away".</dd>
+            <dt>Divide once</dt><dd>The same 1/z feeds both x′ and y′, so you trade two divisions for one division and two multiplications.</dd>
+          </dl>
+        </div>
+
+        <h2 id="shape" data-toc="The shape">3. The shape: a circle, swept around an axis</h2>
+        <div class="two-col">
+          <div>
+            <p>A donut (a <em>torus</em>) is what you get when you spin a circle around an axis that doesn't go through it. Two angles reach every point on the surface:</p>
+            <ul>
+              <li><strong>θ</strong> walks around a small circle of radius R<sub>1</sub>, centered at (R<sub>2</sub>, 0, 0):<br><code>(R2 + R1·cos θ, R1·sin θ, 0)</code></li>
+              <li><strong>φ</strong> spins that circle around the y axis:<br><code>((R2 + R1·cos θ)·cos φ, R1·sin θ, −(R2 + R1·cos θ)·sin φ)</code></li>
+            </ul>
+            <p>donut.c uses R<sub>1</sub> = 1 and R<sub>2</sub> = 2.</p>
+          </div>
+          <figure class="figure">
+            <svg viewBox="0 0 360 230" role="img" aria-labelledby="torus-fig-title">
+              <title id="torus-fig-title">Two circles of radius R1, one on each side of a vertical dashed axis, each at distance R2 from it. An arrow shows the circle sweeping around the axis.</title>
+              <line x1="180" y1="10" x2="180" y2="215" stroke="currentColor" stroke-dasharray="6 6" stroke-opacity=".6" stroke-width="2"/>
+              <circle cx="80" cy="110" r="45" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="3"/>
+              <circle cx="280" cy="110" r="45" fill="none" stroke="#0085CA" stroke-width="4"/>
+              <line x1="180" y1="110" x2="280" y2="110" stroke="#F59E2B" stroke-width="3"/>
+              <text x="215" y="132" fill="#B4610A" font-size="17" font-weight="700">R₂</text>
+              <line x1="280" y1="110" x2="280" y2="65" stroke="#0085CA" stroke-width="3"/>
+              <text x="288" y="90" fill="#0085CA" font-size="17" font-weight="700">R₁</text>
+              <text x="296" y="178" fill="#0085CA" font-size="16">θ</text>
+              <path d="M150 205 A40 12 0 1 0 210 205" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M210 205 l-9 -6 l1 10 z" fill="currentColor"/>
+              <text x="216" y="222" fill="currentColor" font-size="16">φ</text>
+            </svg>
+          </figure>
+        </div>
+
+        <h2 id="rotation" data-toc="Rotation">4. Rotation: then spin the whole thing</h2>
+        <p>Three standard rotation matrices do the work. The first one is the φ sweep from the last section; A and B are the animation angles, nudged a little every frame.</p>
+        <div class="matrices">
+          <figure><pre class="code"><code> cos φ   0   sin φ
+   0     1     0
+-sin φ   0   cos φ</code></pre><figcaption><b>φ around y</b> builds the donut</figcaption></figure>
+          <figure><pre class="code"><code>1     0       0
+0   cos A   sin A
+0  -sin A   cos A</code></pre><figcaption><b>A around x</b> tumbles it forward</figcaption></figure>
+          <figure><pre class="code"><code> cos B   sin B   0
+-sin B   cos B   0
+   0       0     1</code></pre><figcaption><b>B around z</b> spins it like a wheel</figcaption></figure>
+        </div>
+        <p>Multiply them out once by hand (or with a computer algebra system) and every zero becomes a term you never compute. That's where the long formulas in the code come from:</p>
+        <pre class="code"><code>const float x = circlex * (cosB * cosphi + sinA * sinB * sinphi) - circley * cosA * sinB;
+const float y = circlex * (sinB * cosphi - sinA * cosB * sinphi) + circley * cosA * cosB;
+const float z = K2 + cosA * circlex * sinphi + circley * sinA;</code></pre>
+
+        <h2 id="shading" data-toc="Shading">5. Shading: how bright is this spot?</h2>
+        <ul>
+          <li><strong>The normal.</strong> The direction the surface faces. Start from (cos θ, sin θ, 0) on the small circle and apply the same three rotations.</li>
+          <li><strong>The light.</strong> Pick (0, 1, −1): above and behind you. The dot product of the normal with the light is how directly the surface faces it.</li>
+          <li><strong>The character.</strong> That brightness, L, runs from −√2 to √2. Skip L ≤ 0 (facing away from the light), and pick a character from a 12-step ramp:</li>
+        </ul>
+        <pre class="code"><code>".,-~:;=!*#$@"[(int)(L * 8)]   // 8 × √2 ≈ 11.3, so the index never runs off the end</code></pre>
+        <p class="note">The light vector isn't normalized (its length is √2), which is why the code multiplies by 8 instead of 12.</p>
+
+        <h2 id="knobs" data-toc="The knobs">The knobs: constants worth playing with</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>In donut.c</th><th>What it controls</th></tr></thead>
+            <tbody>
+              <tr><td>R<sub>1</sub></td><td>1</td><td>Thickness of the tube</td></tr>
+              <tr><td>R<sub>2</sub></td><td>2</td><td>Distance from the center to the tube</td></tr>
+              <tr><td>K<sub>2</sub></td><td>5</td><td>How far the donut sits from you</td></tr>
+              <tr><td>K<sub>1</sub></td><td>W·K<sub>2</sub>·3 / (8(R<sub>1</sub>+R<sub>2</sub>))</td><td>Zoom: the donut fills ¾ of the half-width</td></tr>
+              <tr><td>θ, φ steps</td><td>0.07, 0.02</td><td>How densely the surface is sampled</td></tr>
+              <tr><td>A, B per frame</td><td>+0.04, +0.02</td><td>Spin speed on each axis</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Scroll back to <a href="#knobs-donut">the live donut</a> and try these: shrink K<sub>2</sub> to exaggerate the perspective, and raise the step sizes until the donut turns speckled.</p>
+
+        <h2 id="loop" data-toc="The render loop">Putting it together: the render loop</h2>
+        <pre class="code"><code>for (θ = 0; θ &lt; 2π; θ += 0.07)
+  for (φ = 0; φ &lt; 2π; φ += 0.02) {
+    p    = rotate(torus(θ, φ), A, B);    // shape + rotation
+    invZ = 1 / (p.z + K2);               // divide once
+    xp   = W/2 + K1 * invZ * p.x;        // projection
+    yp   = H/2 - K1 * invZ * p.y;        // screen y points down
+    L    = brightness(θ, φ, A, B);       // shading
+    if (L &gt; 0 &amp;&amp; invZ &gt; zBuf[yp][xp]) {  // depth
+      zBuf[yp][xp] = invZ;
+      out[yp][xp]  = ".,-~:;=!*#$@"[(int)(L * 8)];
+    }
+  }</code></pre>
+        <p>Precompute the sine and cosine of A and B once per frame. Note the minus sign on y: in 3D, y points up, but screen rows count down.</p>
+
+        <h3>Animating in a terminal</h3>
+        <ol>
+          <li><strong>Once, at startup:</strong> clear the screen (<code>\x1b[2J</code>) and hide the blinking cursor (<code>\x1b[?25l</code>).</li>
+          <li><strong>Every frame, render:</strong> run the donut math into a character buffer. Nothing touches the screen yet.</li>
+          <li><strong>Every frame, draw:</strong> move the cursor home (<code>\x1b[H</code>), write the whole frame in one call, spin a little, repeat.</li>
+        </ol>
+        <p><strong>Why one write?</strong> Printing line by line lets the terminal show half-drawn frames, and the cursor flickers down the left edge. Build the frame first, write it once.</p>
+        <p><strong>Why do x and y get different zooms?</strong> Character cells are about twice as tall as they are wide, so y gets a smaller K<sub>1</sub> than x. Otherwise the donut comes out stretched.</p>
+
+        <details class="answer">
+          <summary>Show the full terminal donut (DonutTerminal.cpp)</summary>
+          <div class="answer-body">
+            <p>Build it with <code>g++ -std=c++17 -O2 DonutTerminal.cpp -o donutTerm</code> and run it in a terminal at least 80 columns wide. Ctrl+C quits.</p>
+            <pre class="code" data-src="src-terminal"></pre>
+          </div>
+        </details>
+
+        <h2 id="window" data-toc="Out of the terminal">Part 2: out of the terminal</h2>
+        <p class="lead-in">Same math, real pixels. A window gives us more resolution, real color and input, and everything from Part 1 carries over unchanged.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th>Terminal</th><th>Window</th></tr></thead>
+            <tbody>
+              <tr><td>Resolution</td><td>80 × 22 characters</td><td>800 × 600 pixels and up</td></tr>
+              <tr><td>Shades</td><td>12 characters</td><td>16 million colors</td></tr>
+              <tr><td>Input</td><td>Ctrl+C</td><td>Keyboard, mouse, resize</td></tr>
+              <tr><td>Speed</td><td>Limited by printing text</td><td>Hand a buffer to the GPU</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Every windowed program has the same shape</h3>
+        <ol class="loop-steps">
+          <li><b>Open</b>size, title</li>
+          <li><b>Events</b>keys, mouse, close</li>
+          <li><b>Update</b><code>A += 0.04</code></li>
+          <li><b>Draw</b>fill a buffer</li>
+          <li><b>Present</b>swap to screen</li>
+          <li><b>Close</b>free it all</li>
+        </ol>
+        <p>Steps 2 to 5 repeat every frame until the window closes. raylib, SDL, GLFW and game engines all name these differently, but the idea doesn't change. The terminal donut already had the middle two.</p>
+
+        <h3>Hello, window</h3>
+        <p>OpenGL only draws. GLFW opens the window, reads input, and hands OpenGL a place to draw.</p>
+        <pre class="code"><code>#include &lt;GLFW/glfw3.h&gt;
+
+int main() {
+  glfwInit();
+  GLFWwindow* win = glfwCreateWindow(800, 600,  // 1 open
+                    "Donut", nullptr, nullptr);
+  glfwMakeContextCurrent(win);
+
+  while (!glfwWindowShouldClose(win)) {
+    glfwPollEvents();                           // 2 events
+    glClearColor(0.04f, 0.11f, 0.18f, 1.0f);    // 3 draw
+    glClear(GL_COLOR_BUFFER_BIT);
+    glfwSwapBuffers(win);                       // 4 present
+  }
+  glfwTerminate();
+}</code></pre>
+        <ol>
+          <li><strong>Open:</strong> <code>glfwCreateWindow</code>, then make its OpenGL context current.</li>
+          <li><strong>Events:</strong> <code>glfwPollEvents</code> handles keys, the mouse and the close button.</li>
+          <li><strong>Draw:</strong> <code>gl*</code> calls draw into a hidden back buffer.</li>
+          <li><strong>Present:</strong> <code>glfwSwapBuffers</code> shows the finished frame.</li>
+        </ol>
+
+        <h3>The payoff: the donut gets pixels</h3>
+        <div class="two-col">
+<pre class="code"><code>// once, before the loop
+unsigned char pixels[W * H * 3];   // R, G, B per pixel
+float zbuf[W * H];
+
+// each frame: clear both, then for each point...
+float shade = 0.2f + 0.8f * L;
+int o = xp + W * yp;
+if (invZ > zbuf[o]) {
+    zbuf[o] = invZ;
+    pixels[3*o]   =  46 * shade;   // ACM blue,
+    pixels[3*o+1] = 168 * shade;   // darker when
+    pixels[3*o+2] = 240 * shade;   // facing away
+}
+
+// ...then hand the buffer to OpenGL
+glDrawPixels(W, H, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+glfwSwapBuffers(win);</code></pre>
+          <dl class="defs">
+            <dt>Mind the holes</dt><dd>A window has far more pixels than a terminal has cells. Sample more points, or paint each point as a 2×2 block.</dd>
+            <dt>Row 0 is the bottom</dt><dd>OpenGL starts at the bottom-left, so drop the minus sign: <code>yp = H/2 + K1·invZ·y</code>.</dd>
+            <dt>One K₁ again</dt><dd>Pixels are square, so x and y share the same zoom.</dd>
+          </dl>
+        </div>
+
+        <h3>Try the window version</h3>
+        <p>This is <code>DonutWindow.cpp</code> running in your browser: the same steps, filling a 400 × 300 pixel buffer. The workshop version can also spin any image as a flat 3D card. Every opaque pixel becomes a point with that pixel's color.</p>
+        <div class="pixel-donut" data-logo="../../assets/img/acm-logo-512.png"></div>
+
+        <details class="answer">
+          <summary>Show the full window program (DonutWindow.cpp)</summary>
+          <div class="answer-body">
+            <p>Keys: <kbd>T</kbd> donut, <kbd>S</kbd> sphere, <kbd>Space</kbd> pause, <kbd>Esc</kbd> quit. Drag an image onto the window to spin it, or pass one on the command line: <code>./donut acm-logo.png</code>.</p>
+            <pre class="code" data-src="src-window"></pre>
+          </div>
+        </details>
+
+        <h2 id="build" data-toc="Build it yourself">Build it yourself</h2>
+        <p>Grab the code from <a href="https://github.com/hollowshield/donutDemo">github.com/hollowshield/donutDemo</a>. The terminal donut needs nothing but a compiler. The window programs need <a href="https://www.glfw.org/download.html">GLFW</a>, and the image loader needs <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb_image.h</a> (one header, next to your <code>.cpp</code>).</p>
+
+        <h3>Windows (MinGW)</h3>
+        <ol>
+          <li>Download the GLFW <em>Windows pre-compiled binaries</em> from glfw.org and unzip them.</li>
+          <li>Copy <code>include/GLFW/glfw3.h</code> into an <code>include/GLFW/</code> folder in your project, and <code>libglfw3.a</code> from the MinGW folder into <code>lib/</code>.</li>
+          <li>Build:</li>
+        </ol>
+        <pre class="code"><code>g++ -std=c++17 -O2 DonutWindow.cpp -o donut.exe -Iinclude -Llib -lglfw3 -lopengl32 -lgdi32
+g++ -std=c++17 projection.cpp -o demo.exe -Iinclude -Llib -lglfw3 -lopengl32 -lgdi32</code></pre>
+        <p class="note">Linking <code>libglfw3.a</code> builds GLFW into your <code>.exe</code>, so nothing else needs to ship with it. If you link <code>libglfw3dll.a</code> instead, keep <code>glfw3.dll</code> next to the <code>.exe</code>.</p>
+
+        <h3>Linux</h3>
+        <pre class="code"><code>sudo apt install libglfw3-dev        # Debian and Ubuntu
+g++ -std=c++17 -O2 DonutWindow.cpp -o donut -lglfw -lGL</code></pre>
+
+        <h3>macOS</h3>
+        <pre class="code"><code>brew install glfw
+g++ -std=c++17 -O2 -DGL_SILENCE_DEPRECATION DonutWindow.cpp -o donut -lglfw -framework OpenGL</code></pre>
+
+        <h3>What's in the repo</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>File</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>DonutTerminal.cpp</code></td><td>The classic ASCII donut, written out readably</td></tr>
+              <tr><td><code>projection.cpp</code></td><td>The 5-step projection demo from Part 1</td></tr>
+              <tr><td><code>DonutWindow.cpp</code></td><td>The donut, a sphere or any image, in a GLFW window</td></tr>
+              <tr><td><code>spin.cpp</code></td><td>Any surface as ASCII art: <code>./spin torus</code>, <code>./spin sphere</code>, <code>./spin image logo.png</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="homework" data-toc="Take-home challenges">Take-home challenges</h2>
+        <div class="activity">
+          <p class="activity-tag">On your own time</p>
+          <h3>Make the donut yours</h3>
+          <p>Each challenge starts from <code>DonutWindow.cpp</code>. Post your results in the club channel.</p>
+          <ul class="challenges">
+            <li><b>Color it</b>Tint by the normal's direction instead of plain brightness.</li>
+            <li><b>Drive it</b>Arrow keys change A and B; hold Space to pause.</li>
+            <li><b>Resize it</b>Make the window resizable and recompute K<sub>1</sub> and the buffers.</li>
+            <li><b>New shape</b>Set R<sub>2</sub> = 0. What do you get? Then try two donuts with a shared z-buffer.</li>
+          </ul>
+
+          <details class="answer">
+            <summary>Answer: Color it</summary>
+            <div class="answer-body">
+              <p>A normal's x, y and z each run from −1 to 1. Remap them to 0 to 1 and use them as red, green and blue, then darken with the usual shading. In <code>render()</code>, replace the three color lines:</p>
+<pre class="code"><code>// color from the rotated normal: each axis -1..1 becomes 0..1
+float cr = 0.5f + 0.5f * n.x;
+float cg = 0.5f + 0.5f * n.y;
+float cb = 0.5f + 0.5f * n.z;
+unsigned char r = (unsigned char)(255 * std::min(1.0f, cr * shade));
+unsigned char g = (unsigned char)(255 * std::min(1.0f, cg * shade));
+unsigned char b = (unsigned char)(255 * std::min(1.0f, cb * shade));</code></pre>
+              <p>Because the normal is rotated with the donut, the colors stay stuck to the surface as it spins.</p>
+            </div>
+          </details>
+
+          <details class="answer">
+            <summary>Answer: Drive it</summary>
+            <div class="answer-body">
+              <p>Key callbacks only fire when a key goes down or up. For "while held", ask GLFW each frame with <code>glfwGetKey</code>. Replace the automatic spin in the main loop, and delete the Space line from <code>onKey</code> so the two don't fight:</p>
+<pre class="code"><code>const float speed = 1.5f;   // radians per second
+if (glfwGetKey(win, GLFW_KEY_UP)    == GLFW_PRESS) A -= speed * dt;
+if (glfwGetKey(win, GLFW_KEY_DOWN)  == GLFW_PRESS) A += speed * dt;
+if (glfwGetKey(win, GLFW_KEY_LEFT)  == GLFW_PRESS) B -= speed * dt;
+if (glfwGetKey(win, GLFW_KEY_RIGHT) == GLFW_PRESS) B += speed * dt;
+
+bool holdingSpace = glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS;
+if (!holdingSpace) { A += 0.7f * dt; B += 1.2f * dt; }   // keep spinning unless held</code></pre>
+            </div>
+          </details>
+
+          <details class="answer">
+            <summary>Answer: Resize it</summary>
+            <div class="answer-body">
+              <p>GLFW windows are resizable by default; the fixed-size arrays are what stop the donut from following. Make the buffer size variables and the arrays vectors:</p>
+<pre class="code"><code>int BW = 400, BH = 300;
+std::vector&lt;unsigned char&gt; pixels(BW * BH * 3);
+std::vector&lt;float&gt;         zbuf(BW * BH);
+
+void resizeBuffers(int fbWidth, int fbHeight) {
+    BW = std::max(1, fbWidth / 2);    // keep the chunky 2x look (use fbWidth for full resolution)
+    BH = std::max(1, fbHeight / 2);
+    pixels.assign(size_t(BW) * BH * 3, 0);
+    zbuf.assign(size_t(BW) * BH, 0.0f);
+}
+
+// in the main loop, right after glfwGetFramebufferSize(win, &amp;fw, &amp;fh):
+if (fw / 2 != BW || fh / 2 != BH) resizeBuffers(fw, fh);</code></pre>
+              <p>In <code>render()</code>, use <code>pixels.data()</code> where it used <code>pixels</code>, and clear with <code>std::fill(zbuf.begin(), zbuf.end(), 0.0f)</code>. K<sub>1</sub> is already computed from <code>BH</code> every frame, so the zoom follows the new height for free.</p>
+            </div>
+          </details>
+
+          <details class="answer">
+            <summary>Answer: New shape</summary>
+            <div class="answer-body">
+              <p>With R<sub>2</sub> = 0, the small circle is centered on the axis it spins around, so sweeping it traces out a <strong>sphere</strong>. You can try it with the R<sub>2</sub> slider at the top of the page.</p>
+              <p>For two donuts, split <code>render()</code> into a clear step and a draw step, and only clear once per frame. Because both donuts write into the same z-buffer, wherever they pass through each other the nearer surface wins pixel by pixel, so they intersect correctly for free:</p>
+<pre class="code"><code>void clearBuffers() {
+    for (int i = 0; i &lt; BW * BH; i++) { pixels[3*i] = 10; pixels[3*i+1] = 27; pixels[3*i+2] = 46; }
+    std::fill(zbuf, zbuf + BW * BH, 0.0f);
+}
+
+// drawModel = the old render() without the clearing, plus an offset applied after rotating
+void drawModel(const Model&amp; m, float A, float B, Vec3 offset) {
+    // ... same as before, but:
+    Vec3 p = rotate(s.p, cA, sA, cB, sB);
+    p = { p.x + offset.x, p.y + offset.y, p.z + offset.z };
+    // ... project, shade and depth-test exactly as before
+}
+
+// each frame:
+clearBuffers();
+drawModel(model, A, B,        { -1.5f, 0.0f, 0.0f });
+drawModel(model, A + 1.0f, B, {  1.5f, 0.0f, 0.0f });</code></pre>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="next">Keep going</h2>
+        <ul class="resources">
+          <li><a href="https://www.a1k0n.net/2011/07/20/donut-math.html">Donut math: how donut.c works</a><span>a1k0n's original write-up, which this workshop follows step by step, plus a follow-up on optimizing it.</span></li>
+          <li><a href="https://github.com/hollowshield/donutDemo">Workshop code on GitHub</a><span>Every program from the workshop. Spin your own objects.</span></li>
+          <li><a href="https://www.glfw.org/docs/latest/quick.html">GLFW: Getting started</a><span>The windowing and input library used in Part 2.</span></li>
+          <li><a href="../sp-3-shaders/">Next: SP-3, Shaders? Never heard of them</a><span>Move the drawing onto the GPU and render with equations.</span></li>
+        </ul>
       </main>
     </div>
   </div>
 
   <footer class="site-foot">
     <div class="wrap">
-      <p>Made for the ACM club at ASU by Pablo Pelaez Fundora.</p>
+      <p>Made for <a href="https://linktr.ee/acm_asu">ACM at ASU</a> by Pablo Pelaez Fundora.</p>
       <p>Found a mistake? <a href="[GitHub repo URL]/issues">Open an issue</a>.</p>
     </div>
   </footer>
 
+  <script src="sources.js"></script>
   <script src="../../assets/js/shader.js"></script>
   <script src="../../assets/js/components.js"></script>
+  <script src="donut.js"></script>
 </body>
 </html>

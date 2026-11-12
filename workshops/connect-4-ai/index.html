@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Building an unbeatable Connect 4 AI · ACM Workshops</title>
-  <meta name="description" content="How a perfect Connect 4 player searches the game tree, walked through with the ImpossibleConnect4 project.">
+  <title>Impossible Connect 4 · ACM Workshops</title>
+  <meta name="description" content="Build a Connect 4 AI that never loses: an SDL3 window, a two-player game, then negamax, alpha-beta pruning, bitboards and a transposition table.">
+  <link rel="icon" href="../../assets/img/acm-logo-64.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
@@ -14,7 +15,7 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-head">
     <div class="wrap">
-      <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"></span>ACM Workshops</a>
+      <a class="brand" href="../../"><img class="brand-mark" src="../../assets/img/acm-logo-64.png" alt="">ACM Workshops</a>
       <nav class="site-nav" aria-label="Main">
         <a href="../../">Workshops</a>
         <a href="../../playground/">Playground</a>
@@ -26,12 +27,13 @@
   <div class="wrap">
     <header class="lesson-head">
       <p class="crumbs"><a href="../../">Workshops</a> / Game AI</p>
-      <h1>Building an unbeatable Connect 4 AI</h1>
-      <p class="lede">How a perfect Connect 4 player searches the game tree, walked through with the ImpossibleConnect4 project in C++ and SDL3.</p>
+      <h1>Impossible Connect 4</h1>
+      <p class="lede">Building an AI that never loses, step by step: a window, a two-player game, then a search that plays perfect Connect 4 fast enough to feel instant.</p>
       <dl class="facts">
         <div><dt>Time</dt><dd>About 60 minutes</dd></div>
         <div><dt>You need</dt><dd>A C++ compiler and SDL3</dd></div>
-        <div><dt>Slides</dt><dd><a href="[link to slides]">Open the deck</a></dd></div>
+        <div><dt>You'll learn</dt><dd>Game loops, minimax, alpha-beta, bitboards</dd></div>
+        <div><dt>Code</dt><dd><a href="https://github.com/hollowshield/ImpossibleConnect4">hollowshield/ImpossibleConnect4</a></dd></div>
       </dl>
     </header>
 
@@ -39,37 +41,385 @@
       <nav class="toc" data-for="#main" aria-label="On this page"><p>On this page</p></nav>
 
       <main id="main" class="prose">
-        <p class="note"><strong>This lesson is still being moved over from the slides.</strong> The project code is already public if you want to read ahead.</p>
 
-        <h2 id="project">The project</h2>
-        <p><a href="https://github.com/hollowshield/ImpossibleConnect4">ImpossibleConnect4</a> is a Connect 4 game written in C++ with SDL3, with an AI that plays perfectly.</p>
-        <div class="placeholder">Add: a screenshot or short clip of the game, and how to build and run it.</div>
+        <h2 id="why" data-toc="Why build this?">Why build this?</h2>
+        <p class="lead-in">One July afternoon, I played Connect 4. I kept losing. I now hate Connect 4. The solution: make everyone else suffer, by building a Connect 4 that is impossible to beat.</p>
+        <p>That's less of a stretch than it sounds, because Connect 4 is a <strong>solved game</strong>: with perfect play, the player who moves first can always force a win.</p>
+        <ol class="timeline">
+          <li><b>Oct 1, 1988 · James D. Allen</b>Announces the first (weak) solution on rec.games.programmer.</li>
+          <li><b>Oct 16, 1988 · Victor Allis</b>Announces his independent solution, described in his thesis.</li>
+          <li><b>Later · John Tromp</b>Strongly solves it with a database of every 8-ply position: about 40,000 hours of computation at CWI.</li>
+        </ol>
+        <p>In this project's normal mode the AI moves first, so if it plays perfectly, it cannot lose. The whole challenge is playing perfectly <em>fast enough</em> to be fun.</p>
 
-        <h2 id="search">How the AI thinks</h2>
-        <div class="placeholder">Add: the game tree, minimax, alpha-beta pruning, move ordering and any other techniques from the talk, each with the matching code from the repo.</div>
+        <h3>Weakly solved vs. strongly solved</h3>
+        <div class="two-col">
+          <dl class="defs">
+            <dt>Weak (Allen and Allis, 1988)</dt><dd>You know who wins from the starting position, and a strategy that gets that result.</dd>
+            <dt>Strong (Tromp's 8-ply database)</dt><dd>You know the result of every possible position, so you can play perfectly from anywhere.</dd>
+          </dl>
+          <div class="note"><strong>What this AI does:</strong> no giant database that takes thousands of hours to build. A small opening book of about 1,040 positions makes the first few moves instant, and after that the AI searches for the perfect move on its own. It behaves like a strong solution, computed on demand.</div>
+        </div>
 
-        <h2 id="try-it">Try it yourself</h2>
-        <div class="placeholder">Add: the hands-on activity and its answer.</div>
+        <h2 id="window" data-toc="Part 1: The SDL3 window">Part 1: The SDL3 window</h2>
+        <p>From an empty program to a window that draws the board 60 times a second.</p>
+        <h3>Every SDL program has the same lifecycle</h3>
+        <ol class="loop-steps">
+          <li><b>Initialize</b>Start the video subsystem with <code>SDL_Init</code></li>
+          <li><b>Create</b>One call makes the 700 × 600 window and its renderer</li>
+          <li><b>Loop</b>Handle events, update, draw. Repeat until quit</li>
+          <li><b>Clean up</b>Destroy the renderer, then the window, then <code>SDL_Quit</code></li>
+        </ol>
+        <ul>
+          <li><strong>SDL3 gotcha:</strong> <code>SDL_Init</code> returns <code>true</code> on success. SDL2 returned 0 on success, so SDL2 tutorials get this backwards.</li>
+          <li><strong>The grid sets the window size:</strong> 7 columns × 100 px by 6 rows × 100 px. The board defines the window, not the other way around.</li>
+        </ul>
+
+        <h3>The game loop</h3>
+        <div class="two-col">
+<pre class="code"><code>while (!quit) {
+    while (SDL_PollEvent(&amp;e)) {
+        if (e.type == SDL_EVENT_QUIT)
+            quit = true;
+        // mouse motion, clicks, R and E keys
+    }
+
+    // start or collect the AI's move
+
+    renderBoard(renderer, hoveredCol);
+    SDL_Delay(16);   // about 60 FPS
+}</code></pre>
+          <dl class="defs">
+            <dt>Poll every frame</dt><dd><code>SDL_PollEvent</code> empties the event queue without waiting. Stop polling and the OS marks your window "Not Responding". (Remember this for Part 3.)</dd>
+            <dt>Cap the frame rate</dt><dd><code>SDL_Delay(16)</code> gives about 60 FPS. The usual alternative is vsync.</dd>
+            <dt>Renamed in SDL3</dt><dd><code>SDL_QUIT</code> is now <code>SDL_EVENT_QUIT</code>, and the other events follow the same pattern.</dd>
+          </dl>
+        </div>
+
+        <h3>Drawing a frame</h3>
+        <ol>
+          <li><strong>Clear:</strong> <code>SDL_SetRenderDrawColor</code>, then <code>SDL_RenderClear</code>.</li>
+          <li><strong>Draw:</strong> a blue square per cell (<code>SDL_FRect</code>, which uses floats in SDL3), then a disc on top.</li>
+          <li><strong>Present:</strong> <code>SDL_RenderPresent</code> swaps the hidden back buffer onto the screen.</li>
+        </ol>
+        <p>That's <strong>double buffering</strong>: everything is drawn off-screen and shown all at once, so nobody sees a half-drawn frame. SDL has no built-in text, so the title bar works as the UI: <code>updateTitle()</code> shows whose turn it is and who won, with no need for SDL_ttf.</p>
+
+        <h3>Drawing a circle</h3>
+        <p>SDL3 can only fill rectangles, so the discs are drawn pixel by pixel: check every pixel in the square around the circle, and draw it if it's within the radius. Drag the slider to see which pixels pass the test.</p>
+        <div class="two-col">
+<pre class="code"><code>// Draw a filled circle pixel by pixel
+// (SDL3 has no circle primitive, only rectangles)
+void DrawFilledCircle(SDL_Renderer* renderer,
+                      float centerX, float centerY,
+                      float radius) {
+    for (float w = 0; w &lt; radius * 2; w++) {
+        for (float h = 0; h &lt; radius * 2; h++) {
+            float dx = radius - w;
+            float dy = radius - h;
+            if ((dx * dx + dy * dy) &lt;= (radius * radius)) {
+                SDL_RenderPoint(renderer, centerX + dx,
+                                centerY + dy);
+            }
+        }
+    }
+}</code></pre>
+          <div class="circle-grid"></div>
+        </div>
+
+        <h2 id="pvp" data-toc="Part 2: Player vs. player">Part 2: Player vs. player</h2>
+        <p>Turning the window into a game: the board in memory, gravity, and finding four in a row. Play a game below and watch the array the program actually stores.</p>
+        <div class="c4-pvp"></div>
+        <ul>
+          <li><strong>Row 0 is the top.</strong> That matches screen coordinates, so cell (r, c) is drawn at y = r × 100 with no flipping.</li>
+          <li><strong>Red (PLAYER1) always moves first.</strong></li>
+        </ul>
+
+        <h3>From a click to a dropped piece</h3>
+        <div class="two-col">
+<pre class="code"><code>int col = static_cast&lt;int&gt;(e.button.x)
+          / CELL_SIZE;   // 0-699 → 0-6
+
+bool makeMove(int col) {
+    if (col &lt; 0 || col &gt;= COLS) return false;
+    for (int r = ROWS - 1; r &gt;= 0; r--) {
+        if (board[r][col] == EMPTY) {
+            board[r][col] = currentPlayer;
+            return true;
+        }
+    }
+    return false;   // column is full
+}</code></pre>
+          <dl class="defs">
+            <dt>Click → column</dt><dd>Integer division maps a pixel to a column.</dd>
+            <dt>Gravity</dt><dd><code>makeMove()</code> scans from the bottom row up for the first empty cell. A full column returns <code>false</code>, and since the turn only switches after a successful move, clicking a full column does nothing.</dd>
+            <dt>Hover highlight</dt><dd>Mouse-motion events set <code>hoveredCol</code> the same way, and <code>SDL_EVENT_WINDOW_MOUSE_LEAVE</code> clears it.</dd>
+          </dl>
+        </div>
+
+        <h3>Finding four in a row</h3>
+        <pre class="code"><code>// right: same row, the next 3 columns
+if (c + 3 &lt; COLS &amp;&amp;
+    board[r][c + 1] == currentPlayer &amp;&amp;
+    board[r][c + 2] == currentPlayer &amp;&amp;
+    board[r][c + 3] == currentPlayer) return true;
+// ...and the same for down, down-right and up-right</code></pre>
+        <ul>
+          <li><strong>Why only 4 directions?</strong> The other 4 are the same lines seen from the other end. Checking from every cell covers them.</li>
+          <li><strong>Why only the current player?</strong> Only the player who just moved can have won.</li>
+        </ul>
+        <p>42 cells is tiny, so scanning the whole board after every move is fine here. Keep this loop in mind: the AI does the same job with bit shifts later.</p>
+
+        <h3>One move, start to finish</h3>
+        <ol class="loop-steps">
+          <li><b>Place the piece</b><code>makeMove(col)</code></li>
+          <li><b>Did they win?</b>Yes: game over</li>
+          <li><b>Board full?</b>Yes: draw</li>
+          <li><b>Switch players</b>Next turn</li>
+        </ol>
+        <p><strong>Order matters:</strong> <code>applyMove()</code> checks for a win <em>before</em> switching players. Switch first and you'd check the wrong player.</p>
+
+        <div class="activity">
+          <p class="activity-tag">Your turn</p>
+          <h3>Build the 1v1 version</h3>
+          <p>Start from <code>WindowManager.cpp</code>. Remove the solver, <code>position</code> and async parts, and let every click call <code>applyMove()</code>. The draw check uses <code>position.movesPlayed()</code>, so add your own move counter instead.</p>
+          <details class="answer">
+            <summary>Show an answer</summary>
+            <div class="answer-body">
+              <p>Delete <code>#include "Connect4Solver.h"</code>, the <code>position</code> and <code>solver</code> globals, the easy-mode settings and everything AI-related in <code>main()</code>. Then change these parts:</p>
+<pre class="code"><code>int moveCount = 0;   // replaces position.movesPlayed()
+
+bool makeMove(int col) {
+    if (col &lt; 0 || col &gt;= COLS) return false;
+    for (int r = ROWS - 1; r &gt;= 0; r--) {
+        if (board[r][col] == EMPTY) {
+            board[r][col] = currentPlayer;
+            moveCount++;
+            return true;
+        }
+    }
+    return false;
+}
+
+void updateTitle(SDL_Window* window, const char* status) {
+    std::string title = std::string("SDL3 Connect Four - ") + status;
+    SDL_SetWindowTitle(window, title.c_str());
+}
+
+void applyMove(SDL_Window* window, int col) {
+    if (!makeMove(col)) return;
+    const char* who = currentPlayer == PLAYER1 ? "Red" : "Yellow";
+    if (checkWin()) {
+        gameOver = true;
+        updateTitle(window, (std::string(who) + " wins! Press R to play again").c_str());
+    } else if (moveCount == ROWS * COLS) {
+        gameOver = true;
+        updateTitle(window, "Draw! Press R to play again");
+    } else {
+        currentPlayer = (currentPlayer == PLAYER1) ? PLAYER2 : PLAYER1;
+        updateTitle(window, currentPlayer == PLAYER1 ? "Red's turn" : "Yellow's turn");
+    }
+}
+
+// in resetGame(): also set moveCount = 0;
+
+// in the event loop: every click plays for whoever's turn it is
+else if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN &amp;&amp; !gameOver) {
+    applyMove(window, static_cast&lt;int&gt;(e.button.x) / CELL_SIZE);
+}</code></pre>
+              <p>In <code>renderBoard()</code>, highlight the hovered column whenever the game isn't over (there's no "human's turn" any more).</p>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="ai" data-toc="Part 3: The AI">Part 3: The AI</h2>
+        <p class="lead-in">How a program can play a perfect game of Connect 4 in a reasonable amount of time.</p>
+
+        <h3>Plugging the AI into the game</h3>
+        <dl class="defs">
+          <dt>Two copies of the board</dt><dd><code>board[6][7]</code> for drawing, and a <code>c4::Position</code> bitboard for the AI. <code>makeMove()</code> updates both, which keeps them in sync.</dd>
+          <dt>Who goes first</dt><dd>Red always moves first. Normal mode: the AI is red. Easy mode: you are red.</dd>
+          <dt>Main thread</dt><dd>Keeps polling events and drawing. Every frame it checks with <code>wait_for(0)</code> whether the AI is done.</dd>
+          <dt>AI thread</dt><dd><code>std::async</code> runs <code>solver.bestMove()</code> on a copy of the position, so it never reads a board that's changing.</dd>
+        </dl>
+        <p>A search can take seconds. If it ran inside the game loop, the loop would stop polling and the window would freeze. While the AI is thinking, clicks and the R and E keys are ignored, and on quit, <code>solver.abort</code> tells the search to stop so the program exits cleanly.</p>
+
+        <h3>Why not just try every game?</h3>
+        <p>Because there are far too many. Possible positions on a 6-row board, by width:</p>
+        <div class="c4-chart"></div>
+        <p><strong>4,531,985,219,092</strong> positions on a standard 7 × 6 board, counted by John Tromp and independently confirmed by Edelkamp and Kissmann in 2008. Brute force is out, so the solver has to be clever: skip branches that can't matter, never solve the same position twice, and make every operation cheap.</p>
+
+        <h3>Keeping score</h3>
+        <p>Each position gets a score from the point of view of the player about to move:</p>
+        <pre class="code"><code>score = 22 - (your stones when you win)</code></pre>
+        <ul>
+          <li><strong>&gt; 0, a win.</strong> Bigger means a faster win. Winning with your 4th stone scores 22 − 4 = 18.</li>
+          <li><strong>= 0, a draw.</strong> Nobody can force a win.</li>
+          <li><strong>&lt; 0, a loss.</strong> Closer to 0 means a slower loss.</li>
+        </ul>
+        <p>Because the score encodes how fast the game ends, the AI can prefer quick wins and slow losses. In code, <code>canWinNext()</code> gives <code>(43 - movesPlayed) / 2</code>, and scores range from −21 to 21.</p>
+
+        <h3>Negamax: one function for both players</h3>
+        <p><strong>Minimax:</strong> I pick my best move, assuming you pick the move that's worst for me. <strong>Negamax</strong> is the same idea with one trick: +5 for me is −5 for you, so a single function handles both players by flipping the sign.</p>
+        <pre class="code"><code>int negamax(const Position&amp; P, int alpha, int beta) {
+    uint64_t next = P.possibleNonLosingMoves();
+    if (next == 0)                         // every move loses
+        return -(42 - P.movesPlayed()) / 2;
+    if (P.movesPlayed() &gt;= 40) return 0;   // draw
+
+    // ... bounds, transposition table, sort moves ...
+
+    while (uint64_t move = sorter.next()) {
+        Position P2(P); P2.play(move);
+        int score = -negamax(P2, -beta, -alpha);   // your best is my worst
+        if (score &gt;= beta) return score;           // cutoff
+        if (score &gt; alpha) alpha = score;
+    }
+    return alpha;
+}</code></pre>
+
+        <h3>Alpha-beta pruning: skip what can't matter</h3>
+        <dl class="defs">
+          <dt>Alpha</dt><dd>The score I'm already guaranteed.</dd>
+          <dt>Beta</dt><dd>The best score my opponent will allow.</dd>
+          <dt>The cutoff</dt><dd>Once a move scores ≥ beta, the opponent would never let the game get here. Skip the remaining moves.</dd>
+        </dl>
+        <p>Example: my move A guarantees me −1. In move B, the very first reply I look at shows my opponent can force −3, which is worse. So I'd never play B, and the rest of B's replies are never looked at.</p>
+
+        <div class="activity">
+          <p class="activity-tag">Your turn</p>
+          <h3>Watch pruning work</h3>
+          <p>This AI uses the same negamax and alpha-beta ideas, but it's a simplified teaching version: it only looks a few moves ahead and then guesses, so it <em>can</em> be beaten. The table counts how many positions it searched for each move.</p>
+          <div class="c4-ai"></div>
+          <ul class="challenges">
+            <li><b>Try 1: Turn off pruning</b>Keep look-ahead at 6 and compare the positions searched with and without alpha-beta.</li>
+            <li><b>Try 2: Turn off center first</b>Pruning only helps when good moves are searched first. How much does move order matter?</li>
+            <li><b>Try 3: Beat it</b>Win at look-ahead 2, then 4, then 6. Where does it stop making obvious mistakes?</li>
+          </ul>
+          <details class="answer">
+            <summary>What you should see</summary>
+            <div class="answer-body">
+              <p><b>Try 1.</b> Without pruning, every position up to the look-ahead gets searched: up to 7 × 7 × 7 … for each extra move. With pruning, the count usually drops by one or two orders of magnitude for the exact same move.</p>
+              <p><b>Try 2.</b> Alpha-beta cuts more when the best move comes first, because it sets a strong alpha early. Center columns are part of the most possible fours, so searching them first finds good moves sooner; with plain left-to-right order the counts go up noticeably.</p>
+              <p><b>Try 3.</b> At low look-ahead the AI can't see your traps coming. The real solver never guesses: it searches to the end of the game, which is why it needs everything below.</p>
+            </div>
+          </details>
+        </div>
+
+        <h3>The opening book: answers computed in advance</h3>
+        <p>The game tree is biggest at the start, so a perfect search is slowest exactly when players are least patient. <code>Connect4Book.h</code> stores about 1,040 positions with their best move, generated offline with the same solver, sorted by key and looked up with binary search. It covers every reply in the AI's first 5 moves, plus easy-mode replies to all 7 openings. Every book entry is a proven winning move.</p>
+
+        <h3>Bitboards: the whole board in 49 bits</h3>
+        <p>The search visits millions of positions, so checking a board has to be nearly free. The AI stores the board as two 64-bit numbers: <code>mask</code> (every stone) and <code>current</code> (the stones of the player to move). Each column gets 7 bits: 6 for the cells plus a spare bit on top that's always 0. Bit number = column × 7 + row from the bottom. Play below and watch both numbers change.</p>
+        <div class="c4-bits"></div>
+        <p><strong>Why the spare bit?</strong> It catches the carry from a full column and stops horizontal and diagonal lines from wrapping into the next column. This encoding comes from John Tromp.</p>
+
+        <h3>Bitboard tricks</h3>
+        <dl class="defs">
+          <dt>Gravity by addition</dt><dd><code>(mask + bottomMask(col)) &amp; columnMask(col)</code>. Adding 1 at the bottom of a column carries up through the stones and lands on the first empty cell. The board above shows the carry for every move you make.</dd>
+          <dt>Every playable cell at once</dt><dd><code>(mask + BOTTOM_MASK) &amp; BOARD_MASK</code>: the same trick, with a 1 at the bottom of all 7 columns in one addition.</dd>
+          <dt>Switching players</dt><dd><code>current ^= mask;</code> XOR with all stones turns "my stones" into "your stones" before the move is added.</dd>
+          <dt>Finding wins with shifts</dt><dd>Shift by 1 for vertical, 7 for horizontal, 6 and 8 for the diagonals. ANDing shifted copies finds every empty cell that would complete a four (XXX_, XX_X, X_XX, _XXX).</dd>
+        </dl>
+        <p>Compare that with <code>checkWin()</code>'s loops from Part 2: the same job, done for the whole board in a handful of instructions. And <code>current + mask</code> is unique for every position, which makes it a perfect key.</p>
+
+        <h3>Four tricks that make it fast enough</h3>
+        <ol>
+          <li><strong>Move ordering.</strong> Search the center first (<code>COLUMN_ORDER = {3, 2, 4, 1, 5, 0, 6}</code>), then sort by how many threats each move creates. Alpha-beta prunes more when good moves come first.</li>
+          <li><strong>Transposition table.</strong> The same position can be reached in different move orders. Store each result so it's never solved twice.</li>
+          <li><strong>Anticipate losing moves.</strong> Two threats: you're lost. One threat: you must block. Never play directly under the opponent's winning cell.</li>
+          <li><strong>Null-window search.</strong> Ask yes/no questions like "is the score above 0?" instead of computing exact scores. Much cheaper.</li>
+        </ol>
+        <p>Each is a step in Pascal Pons's solver tutorial at <a href="http://blog.gamesolver.org/">blog.gamesolver.org</a>.</p>
+
+        <h3>Inside the transposition table</h3>
+        <p>It's a hash map for game positions, like a chess player's memory of openings and gambits.</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th>Slots</th><td>16.7 million: a prime number just above 2<sup>24</sup></td></tr>
+              <tr><th>Per slot</th><td>5 bytes: 32 bits of the key plus a 1-byte value</td></tr>
+              <tr><th>Memory</th><td>About 84 MB, reused across moves and games</td></tr>
+              <tr><th>The value byte</th><td>0 = empty slot, 1–43 = an upper bound on the score, 44–86 = a lower bound (from a cutoff)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Why store only 32 of the 49 key bits?</strong> With a prime table size above 2<sup>17</sup>, the slot number plus the 32 stored bits pin down the full key exactly (the Chinese remainder theorem). New results always overwrite the slot.</p>
+
+        <h3>How the AI picks a move</h3>
+        <ol>
+          <li><strong>Check the opening book:</strong> instant answers for the early game.</li>
+          <li><strong>Take an immediate win:</strong> if any column wins now, play it.</li>
+          <li><strong>Keep only safe moves:</strong> drop moves that let the opponent win next turn.</li>
+          <li><strong>Look for a forced win:</strong> a yes/no search with the window (−1, 0).</li>
+          <li><strong>Otherwise, hold the draw:</strong> a yes/no search with the window (0, 1).</li>
+          <li><strong>If lost, delay:</strong> <code>delayLoss()</code> makes the opponent work as long as possible.</li>
+        </ol>
+        <p class="note">Step 4 plays the first winning move it finds, not always the fastest one. The AI still always wins.</p>
+
+        <h3>Easy mode: giving humans a chance</h3>
+        <ul>
+          <li><strong>You go first.</strong> Perfect play from the first player wins, so now a human <em>can</em> win.</li>
+          <li><strong>A 3-second budget.</strong> The clock is checked every 1,024 positions; checking every single one would slow the search.</li>
+          <li><strong>A heuristic fallback.</strong> Out of time? Play the safe move that creates the most threats.</li>
+          <li><strong>Never store a half-finished search.</strong> Results from an interrupted search would be wrong, so they never go into the table.</li>
+        </ul>
+
+        <h3>Results</h3>
+        <p>Measured on the workshop machine, at roughly 10 million positions per second:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Measure</th><th>Normal mode</th><th>Easy mode</th></tr></thead>
+            <tbody>
+              <tr><td>Opening-book moves</td><td>First 5 AI moves, 0 positions searched</td><td>First AI move only</td></tr>
+              <tr><td>Typical move</td><td>Under 0.02 ms</td><td>Under 0.3 ms</td></tr>
+              <tr><td>Average per move</td><td>~3 ms</td><td>~370 ms</td></tr>
+              <tr><td>Slowest move</td><td>79 ms, 811,270 positions</td><td>3.0 s, 34,010,112 positions (hit the time limit)</td></tr>
+              <tr><td>Human wins / games played</td><td>0 / 4</td><td>0 / 3</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Even at that speed, the AI's second move in easy mode searched 34 million positions and still ran out of time. In normal mode the opening book covers that early stage, so those moves search nothing at all.</p>
+
+        <h2 id="build" data-toc="Play the real thing">Play the real thing</h2>
+        <p>Get the code from <a href="https://github.com/hollowshield/ImpossibleConnect4">github.com/hollowshield/ImpossibleConnect4</a>. It needs a C++17 compiler and <a href="https://github.com/libsdl-org/SDL/releases">SDL3</a>. Controls: click a column to drop a piece, <kbd>R</kbd> to restart, <kbd>E</kbd> to toggle easy mode. The console prints every AI move with its thinking time.</p>
+        <details class="answer">
+          <summary>Show the game (WindowManager.cpp)</summary>
+          <div class="answer-body"><pre class="code" data-src="src-game"></pre></div>
+        </details>
+        <details class="answer">
+          <summary>Show the solver (Connect4Solver.h)</summary>
+          <div class="answer-body"><pre class="code" data-src="src-solver"></pre></div>
+        </details>
+
+        <h2 id="questions" data-toc="Common questions">Common questions</h2>
+        <dl class="defs">
+          <dt>Does it work on bigger boards?</dt><dd>The bitboard needs width × (height + 1) ≤ 64 bits. John Tromp's page has results for other sizes; for example, 8 × 8 is a win for the second player.</dd>
+          <dt>Could machine learning do this instead?</dt><dd>People try. Tromp publishes a dataset of 67,557 positions with their results for exactly that.</dd>
+          <dt>How was the opening book made?</dt><dd>With the same solver, run offline over every position in the AI's first moves, then sorted by key so lookups are a binary search.</dd>
+        </dl>
 
         <h2 id="sources">Sources and further reading</h2>
         <ul class="resources">
-          <li><a href="https://tromp.github.io/c4/c4.html">John Tromp's Connect Four page</a><span>Connect 4 solved, with the history and the numbers behind it.</span></li>
-          <li><a href="http://blog.gamesolver.org/">Pascal Pons: Solving Connect 4</a><span>A step-by-step tutorial for building a perfect Connect 4 solver.</span></li>
+          <li><a href="https://tromp.github.io/c4/c4.html">John Tromp: John's Connect Four Playground</a><span>The history of the solutions, the bitboard encoding, the 8-ply database and the position counts.</span></li>
+          <li><a href="http://blog.gamesolver.org/">Pascal Pons: Solving Connect 4</a><span>A step-by-step tutorial for building a perfect solver. Every speed trick here is a chapter there.</span></li>
+          <li><span class="resource-title">James D. Allen and Victor Allis</span><span>The first solutions of Connect 4 (1988).</span></li>
+          <li><span class="resource-title">Stefan Edelkamp and Peter Kissmann</span><span>Independent count of the 7 × 6 positions (2008).</span></li>
           <li><a href="https://github.com/hollowshield/ImpossibleConnect4">ImpossibleConnect4 on GitHub</a><span>The full source for this workshop.</span></li>
         </ul>
-
       </main>
     </div>
   </div>
 
   <footer class="site-foot">
     <div class="wrap">
-      <p>Made for the ACM club at ASU by Pablo Pelaez Fundora.</p>
+      <p>Made for <a href="https://linktr.ee/acm_asu">ACM at ASU</a> by Pablo Pelaez Fundora.</p>
       <p>Found a mistake? <a href="[GitHub repo URL]/issues">Open an issue</a>.</p>
     </div>
   </footer>
 
+  <script src="sources.js"></script>
   <script src="../../assets/js/shader.js"></script>
   <script src="../../assets/js/components.js"></script>
+  <script src="connect4.js"></script>
 </body>
 </html>
