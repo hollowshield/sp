@@ -37,6 +37,7 @@ assets/img/                    ACM logo (site icon, and the image the donut demo
 workshops/graphics-donut-window/   "How to donut": lesson, donut.js (live demos), sources.js (full C++)
 workshops/sp-3-shaders/        "Shaders? Never heard of them": lesson and shaders.js
 workshops/connect-4-ai/        "Impossible Connect 4": lesson, connect4.js (playable board + AI), sources.js
+workshops/sp-4-hand-tracking/   "Make a computer see your hand": lesson, hands.js (webcam + gesture editor), code.js (starters and answers)
 workshops/_template/           Copy this to start a new workshop
 ```
 

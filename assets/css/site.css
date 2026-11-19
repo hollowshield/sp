@@ -489,3 +489,58 @@ td code { white-space: nowrap; }
   .ascii-screen { font-size: 7.5px; }
   .knob { grid-template-columns: 7.5rem minmax(0, 1fr) 2.75rem; font-size: 0.85rem; }
 }
+
+/* ---------- SP-4: hand tracking ---------- */
+.pipeline-4 { grid-template-columns: repeat(4, 1fr); }
+.hand-figure { margin: 0; }
+.hand-canvas { width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; background: #0B1A2C; display: block; touch-action: none; }
+
+.source-bar { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+.source-buttons, .pose-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.source-bar .btn-run { background: #F59E2B; border-color: #F59E2B; color: #1A1206; font-weight: 600; }
+.pose-buttons .btn { text-transform: capitalize; }
+.pose-buttons .btn[aria-pressed="true"], .landmark-picker .btn[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+.source-msg { font-size: 0.88rem; color: var(--muted); }
+
+.inspector-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.inspector-panel { display: grid; gap: 0.6rem; }
+.landmark-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; }
+.landmark-picker .btn { justify-content: center; padding: 0.4rem 0; font-family: var(--font-mono); position: relative; }
+.landmark-picker .btn::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 14px; height: 3px; margin-left: -7px; border-radius: 2px; background: var(--dot); }
+.lm-name { font: 700 1.1rem var(--font-head); }
+.lm-code { font-family: var(--font-mono); font-size: 0.88rem; color: var(--muted); }
+.lm-readout { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 1rem; margin: 0; font-family: var(--font-mono); }
+.lm-readout dt { color: var(--muted); }
+.lm-readout dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.hand-lab { max-width: none !important; }
+.hand-lab-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.hand-preview .hand-canvas { border-radius: 0; }
+.hand-output { padding: 0.75rem 0.9rem; display: grid; gap: 0.5rem; font-size: 0.88rem; }
+.hand-lab-grid .hand-output { border-top: 1px solid var(--code-line); }
+.out-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.out-label { color: var(--code-dim); font-size: 0.8rem; }
+.hand-demo-grid .out-label { color: var(--muted); }
+.gesture-out { font: 700 1.25rem var(--font-head); color: #F59E2B; margin-right: auto; }
+.hand-output .check { font-size: 0.85rem; }
+.gesture-log { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.gesture-log li { margin: 0 !important; padding: 0.1rem 0.5rem; border-radius: 99px; font-size: 0.78rem; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); opacity: 0.75; }
+.gesture-log li:first-child { opacity: 1; }
+.print-out { margin: 0; font: 0.78rem/1.5 var(--font-mono); color: var(--code-dim); white-space: pre-wrap; max-height: 7.5rem; overflow: auto; }
+.print-out:empty { display: none; }
+.hand-demo-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1.25rem; align-items: center; margin-top: 1.25rem; }
+.hand-demo-grid .gesture-out { font-size: 1.8rem; }
+
+.landmark-map { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 1.5rem; align-items: center; max-width: none !important; color: var(--ink); }
+.landmark-map svg { width: 100%; height: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.lm-legend { list-style: none; padding: 0 !important; margin: 0; display: grid; gap: 0.35rem; }
+.lm-legend li { margin: 0 !important; display: flex; align-items: center; gap: 0.5rem; }
+.lm-legend i { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 1px solid var(--line); }
+.lm-legend b { font-family: var(--font-mono); min-width: 3.5rem; }
+.lm-note { color: var(--muted); font-size: 0.92rem; margin-top: 0.75rem; }
+
+@media (max-width: 860px) {
+  .inspector-grid, .hand-lab-grid, .hand-demo-grid, .landmark-map { grid-template-columns: minmax(0, 1fr); }
+  .pipeline-4 { grid-template-columns: minmax(0, 1fr); }
+}
+.hand-source-video { position: fixed; left: 0; bottom: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }

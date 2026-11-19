@@ -42,6 +42,20 @@ window.WORKSHOPS = [
         status: 'ready'
       }
     ]
+  },
+  {
+    series: 'Computer vision',
+    blurb: 'Teaching a computer to understand a camera.',
+    items: [
+      {
+        code: 'SP-4',
+        title: 'Make a computer see your hand',
+        href: 'workshops/sp-4-hand-tracking/',
+        summary: 'Track your hand with your webcam, right in the browser, then write simple rules that turn a thumbs up, a peace sign or a fist into sounds. Then invent gestures of your own.',
+        meta: ['JavaScript', 'MediaPipe', 'Runs in your browser', '60 min'],
+        status: 'ready'
+      }
+    ]
   }
 ];
 

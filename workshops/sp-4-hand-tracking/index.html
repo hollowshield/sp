@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SP-4: Make a computer see your hand · ACM Workshops</title>
+  <meta name="description" content="Track your hand with your webcam in the browser, then write simple rules that turn gestures like a thumbs up, a peace sign or a fist into sounds.">
+  <link rel="icon" href="../../assets/img/acm-logo-64.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..600&family=Space+Grotesk:wght@500..700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../../"><img class="brand-mark" src="../../assets/img/acm-logo-64.png" alt="">ACM Workshops</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../../">Workshops</a>
+        <a href="../../playground/">Playground</a>
+        <a class="nav-gh" href="https://github.com/hollowshield/sp">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <header class="lesson-head">
+      <p class="crumbs"><a href="../../">Workshops</a> / Computer vision / SP-4</p>
+      <h1>Make a computer see your hand</h1>
+      <p class="lede">Turn on your webcam, hold up your hand, and watch the computer track every finger in real time. Then write a few simple rules that turn a thumbs up, a peace sign or a fist into a sound.</p>
+      <dl class="facts">
+        <div><dt>Time</dt><dd>About 60 minutes</dd></div>
+        <div><dt>You need</dt><dd>A browser and a webcam (or the demo hand)</dd></div>
+        <div><dt>You'll make</dt><dd>Gestures of your own</dd></div>
+        <div><dt>Language</dt><dd>JavaScript</dd></div>
+      </dl>
+    </header>
+
+    <div class="lesson">
+      <nav class="toc" data-for="#main" aria-label="On this page"><p>On this page</p></nav>
+
+      <main id="main" class="prose">
+
+        <h2 id="try" data-toc="Try it">Try it</h2>
+        <p class="lead-in">This is the finished project. Turn on your camera and try a thumbs up, a thumbs down, a peace sign, a fist, a pinch, or "rock on". By the end of this page you'll have written every rule behind it, and invented some of your own.</p>
+        <div class="hand-lab" data-src="invent-answer" data-editor="false" data-sound="off"></div>
+        <div class="note"><strong>Your video stays on your computer.</strong> The hand-tracking model runs inside your browser. The page downloads the model once, and no video or picture is ever sent anywhere. No webcam? The <em>demo hand</em> works for every activity.</div>
+
+        <h2 id="how" data-toc="How a computer sees a hand">How a computer sees a hand</h2>
+        <p>To a computer, a webcam frame is just a grid of numbers: a red, green and blue value for every pixel. Nothing in that grid says "this is a hand". So hand tracking happens in two steps, each done by a small neural network that was trained on many thousands of labeled hand photos:</p>
+        <ol class="pipeline pipeline-4">
+          <li><b>Camera frame</b><span>640 × 480 pixels of color, about 30 times a second.</span></li>
+          <li class="is-yours"><b>Palm detector</b><span>Finds where in the frame any hands are, and draws a box around each one.</span></li>
+          <li class="is-yours"><b>Landmark model</b><span>Looks inside the box and predicts where 21 points on the hand are.</span></li>
+          <li><b>21 landmarks</b><span>A list of points with x, y and z. This is all your code gets.</span></li>
+        </ol>
+        <p class="pipeline-key"><i style="background: var(--blue)"></i>Neural network &nbsp;&nbsp;<i style="border: 1px solid var(--line); background: var(--surface)"></i>Data</p>
+        <p>We're using Google's <strong>MediaPipe Hand Landmarker</strong>. Once a hand has been found, the tracker follows it from frame to frame instead of searching the whole picture again, which is why it's fast enough to run live in a browser.</p>
+
+        <h3>The 21 landmarks</h3>
+        <div class="landmark-map"></div>
+        <p>Every landmark is a point with three numbers:</p>
+        <dl class="defs">
+          <dt>x</dt><dd>Left to right across the picture: 0 at the left edge, 1 at the right edge.</dd>
+          <dt>y</dt><dd>Top to bottom: <strong>0 at the top</strong>, 1 at the bottom. So a smaller y means higher up. This catches everyone at least once.</dd>
+          <dt>z</dt><dd>Depth, measured from the wrist. More negative means closer to the camera. It's a rough guess, much less reliable than x and y.</dd>
+        </dl>
+        <p class="note">x and y are fractions of the picture, not pixels. That way the same rules work on any camera, at any resolution. The picture is mirrored like a selfie camera, so x matches what you see.</p>
+
+        <h2 id="meet" data-toc="Activity 1: Meet your hand">Activity 1: Meet your hand</h2>
+        <div class="activity">
+          <p class="activity-tag">Your turn · 10 minutes</p>
+          <h3>Find your landmarks</h3>
+          <p>Turn on your camera (or the demo hand), pick a landmark number, and move your hand around. Watch its x, y and z change.</p>
+          <div class="hand-inspector"></div>
+          <ul class="challenges">
+            <li><b>Try 1: Find the tips</b>Which numbers are the thumb tip and the index fingertip? Check them on the picture.</li>
+            <li><b>Try 2: Push y down</b>Pick landmark 8. Where do you put your finger to make y close to 0? Close to 1?</li>
+            <li><b>Try 3: Move closer</b>Bring your hand toward the camera. What happens to the space between the points?</li>
+          </ul>
+          <details class="answer">
+            <summary>Show answers</summary>
+            <div class="answer-body">
+              <p><b>Try 1.</b> The thumb tip is 4 and the index tip is 8. Every fingertip is a multiple of 4: 4, 8, 12, 16 and 20.</p>
+              <p><b>Try 2.</b> y is near 0 at the <em>top</em> of the picture and near 1 at the bottom. Raising your hand makes y smaller.</p>
+              <p><b>Try 3.</b> The whole hand gets bigger, so every distance between points grows. Keep this in mind: a rule like "these two points are 0.05 apart" would only work at one distance from the camera. We'll fix that in Activity 4.</p>
+            </div>
+          </details>
+
+          <h3>Your first rule</h3>
+          <p>This editor runs your <code>detect(hand)</code> function on every frame, about 30 times a second. Whatever it returns is shown on the picture. Raise your index finger high to see it work. (Using the demo hand? Drag the picture to move it.)</p>
+          <div class="hand-lab" id="lab-hello" data-src="hello" data-title="hello.js" data-height="15rem"></div>
+          <ul class="challenges">
+            <li><b>Try 1: Left or right</b>Return "left side" when your fingertip is on the left half of the picture, "right side" otherwise.</li>
+            <li><b>Try 2: Say hello</b>Add an <code>onGesture(name)</code> function that calls <code>say("hello")</code> when your hand goes up high.</li>
+            <li><b>Try 3: Thumb vs index</b>Report which one is higher: your thumb tip or your index tip.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show answers</summary>
+            <div class="answer-body">
+              <p><b>Try 1.</b> x = 0.5 is the middle of the picture.</p>
+              <pre class="code" data-src="hello-a1"></pre>
+              <button class="btn" data-hand-load="hello-a1" data-into="lab-hello">Load into the editor</button>
+              <p><b>Try 2.</b> <code>detect</code> runs every frame, but <code>onGesture</code> only runs once when the result <em>changes</em>. Otherwise you'd hear "hello" 30 times a second.</p>
+              <pre class="code" data-src="hello-a2"></pre>
+              <button class="btn" data-hand-load="hello-a2" data-into="lab-hello">Load into the editor</button>
+              <p><b>Try 3.</b> Compare the two y values. Remember: the smaller y is higher up.</p>
+              <pre class="code" data-src="hello-a3"></pre>
+              <button class="btn" data-hand-load="hello-a3" data-into="lab-hello">Load into the editor</button>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="fingers" data-toc="From points to fingers">From points to fingers</h2>
+        <p>The model gives you points, not fingers. "Is my index finger up?" is a question <em>you</em> answer, using geometry. Look at what happens to a finger when you bend it:</p>
+        <figure class="figure">
+          <svg viewBox="0 0 560 230" role="img" aria-labelledby="bend-fig">
+            <title id="bend-fig">Two fingers next to a wrist point. On the straight finger the tip is farther from the wrist than the middle joint. On the bent finger the tip folds back and ends up closer to the wrist than the middle joint.</title>
+            <g fill="none" stroke-linecap="round" stroke-width="5">
+              <path d="M90 200 L90 130 L90 85 L90 40" stroke="#5FB8E8"/>
+              <path d="M370 200 L370 130 L405 105 L410 150" stroke="#5FB8E8"/>
+            </g>
+            <g stroke="#F59E2B" stroke-width="2" stroke-dasharray="6 5">
+              <line x1="190" y1="210" x2="90" y2="40"/>
+              <line x1="470" y1="210" x2="410" y2="150"/>
+            </g>
+            <g fill="currentColor" font-size="14" font-weight="600">
+              <circle cx="190" cy="210" r="7"/><text x="200" y="214">wrist</text>
+              <circle cx="470" cy="210" r="7"/><text x="480" y="214">wrist</text>
+              <text x="102" y="44">tip</text><text x="102" y="134">middle joint</text>
+              <text x="420" y="154">tip</text><text x="382" y="138" text-anchor="end">middle joint</text>
+            </g>
+            <g fill="#5FB8E8"><circle cx="90" cy="40" r="7"/><circle cx="90" cy="130" r="6"/><circle cx="410" cy="150" r="7"/><circle cx="370" cy="130" r="6"/></g>
+            <g font-size="15" font-weight="700" fill="#B4610A"><text x="20" y="20">Straight: tip far from wrist</text><text x="300" y="20">Bent: tip folds back in</text></g>
+          </svg>
+          <figcaption>The orange line is the distance from the wrist to the tip. It shrinks when the finger bends.</figcaption>
+        </figure>
+        <p>So the rule is: <strong>a finger is up when its tip is farther from the wrist than its middle joint.</strong> The site gives you a helper for that:</p>
+        <pre class="code"><code>distance(a, b)   // how far apart two points are (uses x and y)</code></pre>
+        <p class="note">Why not just "the tip is higher than the middle joint"? That works only while your hand points straight up. Comparing distances to the wrist works with your hand tilted, sideways, or upside down.</p>
+
+        <h2 id="count" data-toc="Activity 2: Count fingers">Activity 2: Count fingers</h2>
+        <div class="activity">
+          <p class="activity-tag">Your turn · 10 minutes</p>
+          <h3>How many fingers am I holding up?</h3>
+          <p>The counting loop is written for you. Fill in <code>isUp</code> so it returns <code>true</code> for a straight finger. Right now it always says 0.</p>
+          <div class="hand-lab" id="lab-count" data-src="count" data-title="count.js" data-height="22rem"></div>
+          <ul class="challenges">
+            <li><b>Try 1: Make isUp work</b>Use <code>distance</code> to compare the tip and the middle joint (<code>pip</code>) against the wrist.</li>
+            <li><b>Try 2: Fix the thumb</b>Tuck your thumb across your palm. Does it still count? Measure the thumb from the pinky knuckle (17) instead of the wrist.</li>
+            <li><b>Try 3: Break it on purpose</b>Swap in the "tip is higher" rule using <code>y</code>, then turn your hand sideways.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show answers</summary>
+            <div class="answer-body">
+              <p><b>Try 1.</b> One line: compare the two distances.</p>
+              <pre class="code" data-src="count-a1"></pre>
+              <button class="btn" data-hand-load="count-a1" data-into="lab-count">Load into the editor</button>
+              <p><b>Try 2.</b> The thumb doesn't fold toward the wrist like the other fingers; it swings across the palm. A tucked thumb points at the pinky side of the hand, so its tip ends up <em>closer</em> to the pinky knuckle than its middle joint is.</p>
+              <pre class="code" data-src="count-a2"></pre>
+              <button class="btn" data-hand-load="count-a2" data-into="lab-count">Load into the editor</button>
+              <p><b>Try 3.</b> With your hand upright it counts correctly. Turn it sideways and "higher on the screen" no longer means "along the finger", so the count goes wrong. That's why we measure distances instead.</p>
+              <pre class="code" data-src="count-a3"></pre>
+              <button class="btn" data-hand-load="count-a3" data-into="lab-count">Load into the editor</button>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="gestures" data-toc="Activity 3: Gestures to sounds">Activity 3: Gestures to sounds</h2>
+        <p>A gesture is just a combination of fingers. Once you know which fingers are up, each gesture is one <code>if</code>:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Gesture</th><th>Thumb</th><th>Index</th><th>Middle</th><th>Ring</th><th>Pinky</th></tr></thead>
+            <tbody>
+              <tr><td>Fist</td><td>down</td><td>down</td><td>down</td><td>down</td><td>down</td></tr>
+              <tr><td>Thumbs up</td><td><b>up</b></td><td>down</td><td>down</td><td>down</td><td>down</td></tr>
+              <tr><td>Thumbs down</td><td><b>out, pointing down</b></td><td>down</td><td>down</td><td>down</td><td>down</td></tr>
+              <tr><td>Peace</td><td>any</td><td><b>up</b></td><td><b>up</b></td><td>down</td><td>down</td></tr>
+              <tr><td>Open hand</td><td><b>up</b></td><td><b>up</b></td><td><b>up</b></td><td><b>up</b></td><td><b>up</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Why the gesture doesn't flicker:</strong> a hand halfway between two gestures could switch answers every frame. The site only accepts a new gesture after <code>detect</code> returns it 4 frames in a row, and only then calls <code>onGesture</code>. Real apps do the same thing, often called <em>debouncing</em>.</p>
+
+        <div class="activity">
+          <p class="activity-tag">Your turn · 15 minutes</p>
+          <h3>Thumbs up, peace sign, fist</h3>
+          <p>The fist already works: make one and you'll hear a drum. Add the other two, and give each its own sound. Sounds you can <code>play()</code>: <code>ding</code>, <code>pop</code>, <code>drum</code>, <code>clap</code>, <code>chord</code>, <code>beep</code>, <code>whoosh</code> and <code>sad</code>. You can also <code>say("any text")</code>.</p>
+          <div class="hand-lab" id="lab-gestures" data-src="gestures" data-title="gestures.js" data-height="26rem"></div>
+          <ul class="challenges">
+            <li><b>Try 1: Peace sign</b>Index and middle up, ring and pinky down. Play a chord.</li>
+            <li><b>Try 2: Thumbs up</b>Only the thumb up. Then make a "thumbs sideways" <em>not</em> count, by checking that the thumb tip is above its knuckle (2).</li>
+            <li><b>Try 3: Thumbs down</b>Same fingers as a thumbs up, but the thumb tip is <em>below</em> its knuckle. Play a sad sound.</li>
+            <li><b>Try 4: Debug with print</b>Add <code>print(up)</code> inside <code>detect</code> to see every finger's true or false live.</li>
+          </ul>
+          <details class="answer">
+            <summary>Show the answer</summary>
+            <div class="answer-body">
+              <p>An <code>others</code> variable keeps the checks short. Remember that a smaller y is higher, so "thumb tip above its knuckle" is <code>p[4].y &lt; p[2].y</code>. Thumbs down is the same check flipped: <code>p[4].y &gt; p[2].y</code>.</p>
+              <button class="btn" data-hand-load="gestures-answer" data-into="lab-gestures">Load into the editor</button>
+              <pre class="code" data-src="gestures-answer"></pre>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="invent" data-toc="Activity 4: Invent your own">Activity 4: Invent your own</h2>
+        <p>Every gesture so far was a combination of up and down fingers. Two more tools open up a lot more:</p>
+        <dl class="defs">
+          <dt>Compare to hand size</dt><dd>Is the thumb touching the index finger? "Their distance is under 0.05" only works at one distance from the camera, because a closer hand is bigger. Divide by the hand's own size (wrist to middle knuckle) and the rule works anywhere: <code>distance(p[4], p[8]) &lt; 0.25 * handSize</code>.</dd>
+          <dt>Remember the last frame</dt><dd>A variable declared <em>outside</em> <code>detect</code> keeps its value between frames. That lets you spot movement over time, like a wave.</dd>
+          <dt>Check order matters</dt><dd><code>detect</code> returns at the first match. Put specific gestures (pinch) before general ones (open hand).</dd>
+        </dl>
+
+        <div class="activity">
+          <p class="activity-tag">Your turn · 10 minutes</p>
+          <h3>Make a gesture nobody else has</h3>
+          <p>Start from your Activity 3 code, or load the full answer below and build on it.</p>
+          <div class="hand-lab" id="lab-invent" data-src="gestures-answer" data-title="my-gestures.js" data-height="26rem"></div>
+          <ul class="challenges">
+            <li><b>Pinch</b>Thumb tip touching index tip, using hand size. Careful: a fist can look like a pinch too.</li>
+            <li><b>Rock on and call me</b>Index and pinky up. Then thumb and pinky up.</li>
+            <li><b>Wave</b>Count how many times the wrist changes direction in under a second.</li>
+            <li><b>Your own</b>Crossed fingers, an "OK" sign, a number from 1 to 5. Name it, give it a sound, and show someone.</li>
+          </ul>
+          <details class="answer">
+            <summary>Answer: pinch, rock on, call me and more</summary>
+            <div class="answer-body">
+              <p>This is the code behind the demo at the top of the page, including thumbs down.</p>
+              <button class="btn" data-hand-load="invent-answer" data-into="lab-invent">Load into the editor</button>
+              <pre class="code" data-src="invent-answer"></pre>
+            </div>
+          </details>
+          <details class="answer">
+            <summary>Answer: wave</summary>
+            <div class="answer-body">
+              <p>A wave is about movement, not a shape, so the code remembers where the wrist was last frame and counts direction changes. Try it with the demo hand's <em>wave</em> pose.</p>
+              <button class="btn" data-hand-load="wave-answer" data-into="lab-invent">Load into the editor</button>
+              <pre class="code" data-src="wave-answer"></pre>
+            </div>
+          </details>
+        </div>
+
+        <h2 id="limits" data-toc="Where it breaks">Where it breaks, and why</h2>
+        <p>Rules like these are quick to write and easy to understand, but they're brittle. Try to break your own gestures and you'll find the same problems engineers deal with:</p>
+        <ul>
+          <li><strong>Hidden fingers.</strong> When fingers block each other, the model has to guess where they are. Its guesses can be confident and wrong.</li>
+          <li><strong>Lighting and background.</strong> A dark room, strong backlight, or a background close to your skin tone makes the hand harder to find.</li>
+          <li><strong>Edge cases.</strong> Is a half-bent finger up or down? Every threshold you pick will be wrong for somebody's hand.</li>
+          <li><strong>Who it was trained on.</strong> A model only knows what it was shown. Teams test models across many skin tones, hand sizes and lighting conditions, because gaps in the training photos become gaps in what the model can see.</li>
+        </ul>
+        <p>The next step past hand-written rules is to <em>train</em> a classifier: record a few hundred examples of each gesture's 21 landmarks and let a small model learn the boundaries for you. MediaPipe's Gesture Recognizer does exactly this, with a few gestures built in.</p>
+
+        <h2 id="beyond" data-toc="Where this goes">Where this goes</h2>
+        <ul class="resources">
+          <li><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker">MediaPipe Hand Landmarker guide</a><span>The model used on this page: how it works, its options, and versions for Python, Android and iOS.</span></li>
+          <li><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer">MediaPipe Gesture Recognizer</a><span>Built-in gestures, plus training your own from examples instead of writing rules.</span></li>
+          <li><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker">Face Landmarker</a> and <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker">Pose Landmarker</a><span>The same idea for 478 face points or 33 body points. Everything you learned here carries over.</span></li>
+          <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">MDN: Web Audio API</a><span>How the sounds on this page are made, with no sound files.</span></li>
+          <li><a href="../sp-3-shaders/">SP-3: Shaders? Never heard of them</a><span>Another way to make the computer draw: pair hand tracking with a shader and paint with your fingers.</span></li>
+        </ul>
+      </main>
+    </div>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>Made for <a href="https://linktr.ee/acm_asu">ACM at ASU</a> by Pablo Pelaez Fundora.</p>
+      <p>Found a mistake? <a href="https://github.com/hollowshield/sp/issues">Open an issue</a>.</p>
+    </div>
+  </footer>
+
+  <script src="code.js"></script>
+  <script src="../../assets/js/shader.js"></script>
+  <script src="../../assets/js/components.js"></script>
+  <script src="hands.js"></script>
+</body>
+</html>
