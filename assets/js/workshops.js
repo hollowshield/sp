@@ -12,7 +12,7 @@ window.WORKSHOPS = [
     blurb: 'From math on a terminal to real-time pixels.',
     items: [
       {
-        code: '',
+        code: 'SP-1',
         title: 'How to donut',
         href: 'workshops/graphics-donut-window/',
         summary: 'How donut.c turns a little trigonometry into a spinning 3D donut made of text, then moving the same math into a real window with GLFW and OpenGL.',
@@ -34,7 +34,7 @@ window.WORKSHOPS = [
     blurb: 'Programs that play games better than you do.',
     items: [
       {
-        code: '',
+        code: 'SP-2',
         title: 'Impossible Connect 4',
         href: 'workshops/connect-4-ai/',
         summary: 'Building a Connect 4 AI that never loses: an SDL3 game loop, then negamax, alpha-beta pruning, bitboards and a transposition table.',
