@@ -298,5 +298,105 @@ function detect(hand) {
 function onGesture(name) {
   if (name === "wave") say("hi there!");
 }
+`,
+
+  /* ---------------- Bonus: paint with your hand (GLSL) ---------------- */
+
+  'hand-glow': `// Your index fingertip as a glowing light.
+// iHand[i].xy is landmark i, in pixels, with y pointing UP (like fragCoord).
+// iHandFound is 1.0 while a hand is visible and fades to 0.0 without one.
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    vec2 tip = iHand[8].xy;                 // 8 = index fingertip
+    float d = length(fragCoord - tip);      // pixels from this pixel to the tip
+
+    float glow = 12.0 / max(d, 1.0);        // bright near the tip, fades with distance
+                                            // (max stops a divide by zero right on the tip)
+    vec3 color = vec3(0.37, 0.72, 0.91) * glow * iHandFound;
+
+    vec3 background = vec3(0.04, 0.10, 0.17);
+    fragColor = vec4(background + color, 1.0);
+}
+`,
+
+  'hand-glow-answer': `// All four tries in one shader.
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    vec3 col = vec3(0.04, 0.10, 0.17);
+    float scale = iHandSize / 100.0;        // Try 4: a closer hand is bigger, so glow bigger
+
+    // Try 3: is the thumb touching the index finger? Compare to the hand's size.
+    float pinch = length(iHand[4].xy - iHand[8].xy) / max(iHandSize, 1.0);
+    vec3 tint = pinch < 0.35 ? vec3(0.96, 0.62, 0.17)    // orange while pinching
+                             : vec3(0.37, 0.72, 0.91);   // blue otherwise
+
+    // Try 1 and 2: a light on every fingertip that is up.
+    for (int f = 0; f < 5; f++) {
+        vec2 tip = iHand[4 + f * 4].xy;     // tips are 4, 8, 12, 16, 20
+        float d = length(fragCoord - tip);
+        col += tint * (12.0 * scale / max(d, 1.0)) * iFingers[f] * iHandFound;
+    }
+
+    fragColor = vec4(col, 1.0);
+}
+`,
+
+  'hand-neon': `// Neon hand: every bone drawn as a glowing line,
+// rings that spin faster with more fingers up, and a spark when you pinch.
+
+const ivec2 BONES[21] = ivec2[21](
+    ivec2(0, 1), ivec2(1, 2), ivec2(2, 3), ivec2(3, 4),
+    ivec2(0, 5), ivec2(5, 6), ivec2(6, 7), ivec2(7, 8),
+    ivec2(5, 9), ivec2(9, 10), ivec2(10, 11), ivec2(11, 12),
+    ivec2(9, 13), ivec2(13, 14), ivec2(14, 15), ivec2(15, 16),
+    ivec2(13, 17), ivec2(0, 17), ivec2(17, 18), ivec2(18, 19), ivec2(19, 20));
+
+// Distance from point p to the line segment from a to b.
+float segment(vec2 p, vec2 a, vec2 b)
+{
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.001), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+
+// Same colors as the landmark map: thumb orange, index blue, and so on.
+vec3 fingerColor(int i)
+{
+    if (i <= 4)  return vec3(0.96, 0.62, 0.17);
+    if (i <= 8)  return vec3(0.37, 0.72, 0.91);
+    if (i <= 12) return vec3(0.48, 0.88, 0.69);
+    if (i <= 16) return vec3(0.77, 0.65, 1.00);
+    return vec3(1.00, 0.56, 0.64);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    float scale = max(iHandSize, 1.0) / 100.0;
+    float up = iFingers[0] + iFingers[1] + iFingers[2] + iFingers[3] + iFingers[4];
+
+    // Background rings spreading from the palm.
+    float r = length(fragCoord - iHand[9].xy) / iResolution.y;
+    float rings = 0.5 + 0.5 * sin(r * 40.0 - iTime * (1.0 + up));
+    vec3 col = vec3(0.03, 0.07, 0.13);
+    col += vec3(0.0, 0.10, 0.18) * rings * exp(-r * 3.0) * iHandFound;
+
+    // Bones.
+    for (int i = 0; i < 21; i++) {
+        float d = segment(fragCoord, iHand[BONES[i].x].xy, iHand[BONES[i].y].xy);
+        float g = 3.0 * scale / (d + 2.0);      // squared below, so the glow stays tight
+        col += fingerColor(BONES[i].y) * g * g * iHandFound;
+    }
+
+    // Pinch: a spark between the thumb tip and index tip.
+    float pinch = length(iHand[4].xy - iHand[8].xy) / max(iHandSize, 1.0);
+    vec2 mid = (iHand[4].xy + iHand[8].xy) * 0.5;
+    float s = 12.0 * scale / (length(fragCoord - mid) + 4.0);
+    col += vec3(1.0, 0.9, 0.6) * s * s * smoothstep(0.4, 0.15, pinch) * iHandFound;
+
+    col = 1.0 - exp(-col);    // soft tone map, so bright spots don't turn flat white
+    fragColor = vec4(col, 1.0);
+}
 `
 });

@@ -241,6 +241,47 @@
           </details>
         </div>
 
+        <h2 id="shader" data-toc="Bonus: Paint with your hand">Bonus: Paint with your hand</h2>
+        <p>So far your hand made sounds. It can also drive a <strong>shader</strong>: a tiny program that runs once for every pixel on the screen, every frame, on your graphics card. (That's the whole topic of <a href="../sp-3-shaders/">SP-3</a>. You don't need it to try this, but it helps.)</p>
+        <p>The shaders on this page get four extra inputs, filled in from the tracked hand every frame:</p>
+        <dl class="defs">
+          <dt><code>iHand[21]</code></dt><dd>The 21 landmarks, in <em>pixels</em> of the shader's picture. <code>iHand[8].xy</code> is your index fingertip. Careful: y points <em>up</em> here, like <code>fragCoord</code>, the opposite of the JavaScript activities.</dd>
+          <dt><code>iHandFound</code></dt><dd>1.0 while a hand is visible, fading to 0.0 when it's gone. Multiply by it so nothing glows with no hand around.</dd>
+          <dt><code>iHandSize</code></dt><dd>Wrist to middle knuckle, in pixels. The same hand-size trick from Activity 4.</dd>
+          <dt><code>iFingers[5]</code></dt><dd>1.0 if the thumb, index, middle, ring or pinky is up, using the same rule you wrote in Activity 2.</dd>
+        </dl>
+        <p>Here's where you can end up. Turn on your camera or the demo hand, then try a pinch:</p>
+        <div class="hand-view" id="shader-source"></div>
+        <div class="lab" id="lab-neon" data-src="hand-neon" data-title="neon-hand.glsl" data-uniforms="hand" data-height="22rem" data-alt="A shader drawing your tracked hand as glowing neon lines"></div>
+
+        <div class="activity">
+          <p class="activity-tag">Bonus · 10 minutes</p>
+          <h3>Make your fingertip glow</h3>
+          <p>The starter puts one light on your index fingertip. Each pixel measures how far it is from the tip and gets brighter the closer it is.</p>
+          <div class="lab" id="lab-glow" data-src="hand-glow" data-title="glow.glsl" data-uniforms="hand" data-height="18rem" data-alt="A shader with a light that follows your index fingertip"></div>
+          <ul class="challenges">
+            <li><b>Five lights</b>Put a light on every fingertip. They're 4, 8, 12, 16 and 20, so a loop with <code>4 + f * 4</code> covers them all.</li>
+            <li><b>Only fingers that are up</b>Multiply each light by <code>iFingers[f]</code>. Make a fist and they all go out.</li>
+            <li><b>Pinch to change color</b>Measure thumb tip to index tip, divide by <code>iHandSize</code>, and switch to orange when it's small.</li>
+            <li><b>Closer is bigger</b>Bring your hand toward the camera. Scale the glow by <code>iHandSize</code> so it grows too.</li>
+          </ul>
+          <details class="answer">
+            <summary>Answer: all four tries</summary>
+            <div class="answer-body">
+              <button class="btn" data-load="hand-glow-answer" data-into="lab-glow">Load into the editor</button>
+              <pre class="code" data-src="hand-glow-answer"></pre>
+            </div>
+          </details>
+          <details class="answer">
+            <summary>Show off: the neon hand</summary>
+            <div class="answer-body">
+              <p>Draws every bone as a glowing line by measuring each pixel's distance to all 21 bones. The same trick SP-3 used for shapes, applied to a hand.</p>
+              <button class="btn" data-load="hand-neon" data-into="lab-glow">Load into the editor</button>
+              <pre class="code" data-src="hand-neon"></pre>
+            </div>
+          </details>
+        </div>
+
         <h2 id="limits" data-toc="Where it breaks">Where it breaks, and why</h2>
         <p>Rules like these are quick to write and easy to understand, but they're brittle. Try to break your own gestures and you'll find the same problems engineers deal with:</p>
         <ul>
@@ -257,7 +298,8 @@
           <li><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer">MediaPipe Gesture Recognizer</a><span>Built-in gestures, plus training your own from examples instead of writing rules.</span></li>
           <li><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker">Face Landmarker</a> and <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker">Pose Landmarker</a><span>The same idea for 478 face points or 33 body points. Everything you learned here carries over.</span></li>
           <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">MDN: Web Audio API</a><span>How the sounds on this page are made, with no sound files.</span></li>
-          <li><a href="../sp-3-shaders/">SP-3: Shaders? Never heard of them</a><span>Another way to make the computer draw: pair hand tracking with a shader and paint with your fingers.</span></li>
+          <li><a href="https://hollowshield.github.io/hand-rps/">Hand Rock Paper Scissors</a><span>A full game built on the same idea: your webcam reads rock, paper or scissors and you play the computer. Uses Google's ready-made Gesture Recognizer instead of hand-written rules. <a href="https://github.com/hollowshield/hand-rps">Code on GitHub</a>.</span></li>
+          <li><a href="../sp-3-shaders/">SP-3: Shaders? Never heard of them</a><span>Everything behind the bonus section: how shaders draw shapes, color and motion from scratch.</span></li>
         </ul>
       </main>
     </div>

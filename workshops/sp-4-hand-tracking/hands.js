@@ -762,6 +762,62 @@
     root.appendChild(el('div', null, [legend, el('p', { class: 'lm-note', text: 'Each finger counts up from the knuckle to the tip, so the fingertips are 4, 8, 12, 16 and 20.' })]));
   }
 
+  /* ================================================================
+     Hand inputs for shader labs (<div class="lab" data-uniforms="hand">)
+     The shader gets the first hand in pixels of its own canvas, with
+     y pointing UP like fragCoord, so length(fragCoord - iHand[8].xy)
+     is the distance to the index fingertip.
+     ================================================================ */
+
+  var HAND_PRELUDE = [
+    'uniform vec3 iHand[21];      // landmarks in pixels (x, y up), z = depth',
+    'uniform float iHandFound;    // 1.0 while a hand is visible, else 0.0',
+    'uniform float iHandSize;     // wrist to middle knuckle, in pixels',
+    'uniform float iFingers[5];   // 1.0 if thumb, index, middle, ring, pinky is up'
+  ].join('\n');
+
+  var TIP = [4, 8, 12, 16, 20], PIP = [3, 6, 10, 14, 18];
+  var handFlat = new Float32Array(63), fingerFlat = new Float32Array(5);
+  var lastPoints = null;
+  // Fade the hand in and out instead of popping, so shaders don't flicker
+  // when the tracker loses the hand for a frame.
+  var found = 0, foundTarget = 0, lastFoundTime = 0;
+  Engine.listeners.add(function (hands) {
+    if (hands.length) { lastPoints = hands[0].points; foundTarget = 1; }
+    else foundTarget = 0;
+  });
+
+  function setHandUniforms(gl, prog, view) {
+    var W = view.canvas.width, H = view.canvas.height;
+    var now = performance.now(), dt = Math.min((now - lastFoundTime) / 1000, 0.1);
+    lastFoundTime = now;
+    found += (foundTarget - found) * Math.min(1, dt * 8);
+    if (lastPoints) {
+      var p = lastPoints;
+      for (var i = 0; i < 21; i++) {
+        handFlat[i * 3] = p[i].x * W;
+        handFlat[i * 3 + 1] = (1 - p[i].y) * H;
+        handFlat[i * 3 + 2] = p[i].z || 0;
+      }
+      for (var f = 0; f < 5; f++) {
+        var base = f === 0 ? p[17] : p[0];   // the thumb folds toward the pinky side
+        fingerFlat[f] = distance(p[TIP[f]], base) > distance(p[PIP[f]], base) ? 1 : 0;
+      }
+    }
+    var size = Math.hypot(handFlat[27] - handFlat[0], handFlat[28] - handFlat[1]);
+    gl.uniform3fv(gl.getUniformLocation(prog, 'iHand'), handFlat);
+    gl.uniform1f(gl.getUniformLocation(prog, 'iHandFound'), found);
+    gl.uniform1f(gl.getUniformLocation(prog, 'iHandSize'), size);
+    gl.uniform1fv(gl.getUniformLocation(prog, 'iFingers'), fingerFlat);
+  }
+
+  window.LAB_INPUTS = window.LAB_INPUTS || {};
+  window.LAB_INPUTS.hand = {
+    prelude: HAND_PRELUDE,
+    set: setHandUniforms,
+    hint: 'Your hand drives iHand. Use the camera or demo hand above.'
+  };
+
   /* ================================================================ */
 
   function init() {

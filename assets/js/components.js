@@ -100,6 +100,8 @@
     this.original = initial;
     this.root = root;
     var isPlayground = root.hasAttribute('data-playground');
+    // data-uniforms="name" picks extra shader inputs a lesson registered in window.LAB_INPUTS.
+    var inputs = (root.dataset.uniforms && window.LAB_INPUTS && window.LAB_INPUTS[root.dataset.uniforms]) || null;
 
     var textarea = el('textarea', {
       spellcheck: 'false', autocapitalize: 'off', autocomplete: 'off', autocorrect: 'off',
@@ -113,8 +115,10 @@
     var runBtn = el('button', { type: 'button', class: 'btn btn-run', text: 'Run', title: 'Run (Ctrl + Enter)' });
     var resetBtn = el('button', { type: 'button', class: 'btn', text: 'Reset', title: 'Go back to the starting code' });
     var copyBtn = el('button', { type: 'button', class: 'btn', text: 'Copy' });
+    // The playground doesn't have a lesson's extra inputs, so those labs don't link to it.
     var extra = isPlayground
       ? el('button', { type: 'button', class: 'btn', text: 'Copy share link' })
+      : inputs ? null
       : el('a', { class: 'btn', href: '#', target: '_blank', rel: 'noopener', text: 'Open in playground' });
 
     var head = el('div', { class: 'lab-head' }, [
@@ -129,7 +133,7 @@
     var restartBtn = el('button', { type: 'button', class: 'btn btn-quiet', text: 'Restart', title: 'Set iTime back to 0' });
     var preview = el('figure', { class: 'lab-preview' }, [
       canvas,
-      el('figcaption', null, [playBtn, restartBtn, el('span', { class: 'lab-hint', text: 'Drag to move iMouse' })])
+      el('figcaption', null, [playBtn, restartBtn, el('span', { class: 'lab-hint', text: (inputs && inputs.hint) || 'Drag to move iMouse' })])
     ]);
 
     root.appendChild(el('div', { class: 'lab-editor' }, [head, body, status]));
@@ -137,7 +141,9 @@
 
     this.textarea = textarea;
     this.view = new Shaders.ShaderView(canvas, {
-      onState: function (v) { playBtn.textContent = v.playing ? 'Pause' : 'Play'; }
+      onState: function (v) { playBtn.textContent = v.playing ? 'Pause' : 'Play'; },
+      prelude: inputs ? inputs.prelude : '',
+      uniforms: inputs ? inputs.set : null
     });
     playBtn.textContent = this.view.playing ? 'Pause' : 'Play';
 
@@ -171,7 +177,7 @@
         status.innerHTML = 'Running. The preview updates as you type, or press <kbd>Ctrl</kbd> + <kbd>Enter</kbd>.';
       }
       renderGutter(self.errorLines);
-      if (!isPlayground) extra.href = playgroundLink(textarea.value);
+      if (!isPlayground && extra) extra.href = playgroundLink(textarea.value);
       if (root.onCodeChange) root.onCodeChange(textarea.value);
     };
 

@@ -27,9 +27,11 @@
     'uniform vec4 iMouse;',
     'uniform vec4 iDate;',
     'out vec4 st_FragColor;',
-    '#line 1',
     ''
   ].join('\n');
+  // Lessons can add their own inputs (SP-4 adds the hand). They go before
+  // "#line 1" so error line numbers still match the student's code.
+  function prelude(extra) { return PRELUDE + (extra ? extra + '\n' : '') + '#line 1\n'; }
 
   var EPILOGUE = '\nvoid main() {\n  vec4 c = vec4(0.0, 0.0, 0.0, 1.0);\n  mainImage(c, gl_FragCoord.xy);\n  st_FragColor = vec4(c.rgb, 1.0);\n}\n';
 
@@ -73,13 +75,13 @@
     });
   }
 
-  function compile(source) {
+  function compile(source, extraPrelude) {
     if (!supported) {
       return { errors: [{ line: 0, message: 'This browser does not support WebGL2, so shaders cannot run here. Try a recent Chrome, Edge, Firefox or Safari.' }] };
     }
     var userLines = source.split('\n').length;
     var fs = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fs, PRELUDE + source + EPILOGUE);
+    gl.shaderSource(fs, prelude(extraPrelude) + source + EPILOGUE);
     gl.compileShader(fs);
     if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
       var errs = parseErrors(gl.getShaderInfoLog(fs) || '', userLines);
@@ -144,6 +146,8 @@
     this.dirty = true;
     this.mouse = [0, 0, 0, 0];
     this.onState = opts.onState || null;
+    this.prelude = opts.prelude || '';        // extra uniform declarations
+    this.uniforms = opts.uniforms || null;    // function (gl, program, view) that sets them
     byCanvas.set(canvas, this);
     views.add(this);
     visibility.observe(canvas);
@@ -154,7 +158,7 @@
   // Returns [] on success, or a list of {line, message}. On failure the
   // previous working shader keeps running, so the preview never goes blank.
   ShaderView.prototype.setSource = function (source) {
-    var r = compile(source);
+    var r = compile(source, this.prelude);
     if (r.errors) return r.errors;
     if (this.program) gl.deleteProgram(this.program.prog);
     this.program = r.program;
@@ -217,6 +221,7 @@
     var d = new Date();
     gl.uniform4f(p.date, d.getFullYear(), d.getMonth(), d.getDate(),
       d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000);
+    if (this.uniforms) this.uniforms(gl, p.prog, this);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     // WebGL draws from the bottom-left corner of the hidden canvas.
